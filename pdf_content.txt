@@ -1,0 +1,180 @@
+
+--- Page 1 ---
+the prism.
+PRISM 
+
+--- Page 2 ---
+Our Team
+IGDTUW CSE 2028
+AKANKSHA 
+DTU CSE 2028
+UDAY
+VAIBHAV 
+VINEET
+YASH
+DTU CSE 2028
+DTU CSE 2028
+DTU CSE 2028zero_civic_sense 
+Linkedin
+Github Github Github Github GithubLinkedin Linkedin Linkedin Linkedin
+
+
+--- Page 3 ---
+Millions of N E U R O D I V E R G E N T  children, including those
+with Autism Spectrum Disorder (ASD), ADHD, Cerebral
+Palsy, and Dyslexia, face significant barriers in accessing
+personalized and engaging learning support.P R O B L E M  S T A T E M E N T
+Parents  s t r u g g l e  t o  m o n i t o r  r e a l
+t i m e  d e v e l o p m e n t ,  w h i l e  t h e r a p i s t s
+l a c k  a c c e s s i b l e  d i g i t a l  t o o l s for
+remote assessment and customized
+intervention.
+Most students are placed in
+general education classrooms (LRE
+– L e a s t  R e s t r i c t i v e  E n v i r o n m e n t).
+General education teachers have
+l i t t l e  t o  n o  t r a i n i n g  i n  a u t i s m
+intervention.
+Children with autism struggle with
+communication and emotional
+regulation, and lack personalized
+real-time support for self-
+regulation.Condition Best Estimate in India
+Autism Spectrum Disorder
+(ASD)1–3% of children
+ADHD 5–15% symptomatic in children
+Cerebral Palsy (CP) 2.1–3 per 1,000 live births
+Dyslexia (SLD) 6–12% of children
+
+--- Page 4 ---
+PLAY
+(Gamefied Experience)ANALYZE
+(AI Reporting)CONNECT
+Instead of immidiating Clinical test children play
+engaging games
+Multi-Symptom Screening: We target specific
+biomarkers for ADHD, Autism, and Dyslexia
+through specialized gameplay.
+ GAMES
+Attention check: Measuring  focus and
+distraction (ADHD)
+Emotion Lab: Assessing facial emotion
+and recognisation (AUTISM)
+Direction Sense: Testing spatial
+awareness and processing speed
+F r o m  A s s e s s m e n t  t o  A c t i o nWe move beyond “Yes/No” simple diagnosis to
+actionable data
+AI Driven Anakysis:  Our algorithms analyze
+reaction times, gaze patterns, and error rates to
+generate a Probabilistic Risk Score.
+Key Metrics
+Dyslexic Pattern (Mirror Confusion
+direction lag
+Attention spam
+Impulsive & Distraction frequency(Community & Care)
+Detection is first spet we also give way forward
+Parent Community Pods :  A safe space for peer-
+to-peer learning, sharing parenting strategies,
+and emotional support.
+Therapist Integration:
+Parents can grant access to Mental
+Health Experts & Therapists.
+Clinicians receive detailed, data-backed
+cognitive reports to aid in formal
+diagnosis and therapy planning.
+
+--- Page 5 ---
+I N A T T E N T I O N  D E T E C T I O N
+Common syndrome of
+notADHD
+Autism
+P r o b l e m s  f a c e d  b y
+c h i l d r e nA. Poor Task Completion
+B. Careless Mistakes
+C. Difficulty Following Multi-Step
+Instructions
+
+--- Page 6 ---
+E m o t i o n  D e t e c t i o n  S y s t e m
+P r o b l e m s  f a c e d  b y
+c h i l d r e nSocial Interaction Problems
+Misunderstanding Others
+Poor Empathy Development
+
+
+--- Page 7 ---
+M o r e  G a m e s
+
+--- Page 8 ---
+O u r  P r o j e c t  L i n k :  h t t p s : / / b i n g o 5 7 0 6 . v e r c e l . a p p /
+
+--- Page 9 ---
+Free Tier
+First 3 cognitive assessment reports free 
+Basic insights on Attention ,Memory ,Emotion response
+          Learning indicators
+Limited progress tracking This builds trust and allows
+parents to experience value before commitment.
+CONVERSION
+Paid Subscription (Premium Access)
+After 3 reports, users upgrade to unlock:
+Detailed cognitive & behavioral reports
+Longitudinal progress tracking dashboard
+Weekly & monthly improvement analytics
+Downloadable therapist-ready reports
+This ensures recurring revenue while delivering continuous
+developmental monitoring.Platform Fee Model
+Therapists, psychologists, and special educators:
+Pay a platform onboarding fee
+Pay a monthly subscription or revenue share model
+Value Exchange
+Expert
+receive
+Access to child cognitive reports
+Digital assessment tools
+Remote monitoring dashboard
+Client acquisition through the platformParent
+receive
+Parents get verified
+experts
+
+--- Page 11 ---
+KEY USES, IMPACT & BENEFITS
+01 Early Neurodevelopmental Screening
+Identifies attention, linguistic, motor, and emotional
+regulation gaps through digital assessment games
+03
+Behavioral Trigger AnalysisLogs pre-meltdown events, detects recurring patterns,
+and provides real-time response guidance.
+02
+Continuous Progress MonitoringTracks weekly performance metrics and improvement
+trends with downloadable reports for parents and
+educators.
+04 Personalized Home Therapy Planning
+Generates adaptive activity plans targeting detected
+weak areas and optimizes them through feedback
+loops. Key Use Cases
+ Benefits
+For Children
+Personalized skill development
+Reduced frustration and behavioral escalation
+Adaptive learning pace
+Continuous progress tracking
+ Im pact
+Early Identification
+Detects cognitive and behavioral gaps before academic decline
+Converts subjective observations into measurable neurological 
+For Parents
+Real-time progress dashboard
+Downloadable structured reports
+Meltdown response guidance
+Peer support via community podPreventive Intervention
+Pattern recognition reduces frequency and intensity of meltdowns
+Enables proactive support instead of crisis-based reactions
+Improved Developmental Outcomes
+Strengthened attention, motor coordination, and phonological processing
+Enhanced emotional self-regulation
+
+--- Page 12 ---
+TECHNICAL ARCHITECTURE
+TECH STACK
