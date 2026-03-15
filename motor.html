@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor Match — PRISM Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0a0f; --bg2: #111118; --card: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.06); --text: #f0f0f5; --muted: #8888a0;
+            --indigo: #818cf8; --cyan: #06b6d4; --pink: #f472b6; --green: #34d399;
+            --amber: #fbbf24; --red: #ef4444; --teal: #2dd4bf;
+            --gradient: linear-gradient(135deg, #2dd4bf, #34d399);
+            --font-display: 'Outfit', sans-serif; --font-body: 'Inter', sans-serif;
+        }
+        body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; }
+        .game-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid var(--border); background: rgba(10,10,15,0.9); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100; }
+        .game-nav a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: color 0.3s; }
+        .game-nav a:hover { color: var(--text); }
+        .game-nav .title { font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .game-wrapper { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+        .intro-screen { text-align: center; padding: 60px 20px; }
+        .intro-screen h1 { font-family: var(--font-display); font-size: 2.8rem; font-weight: 800; margin-bottom: 16px; }
+        .gradient-text { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .intro-screen p { color: var(--muted); font-size: 1.1rem; max-width: 500px; margin: 0 auto 20px; line-height: 1.7; }
+        .rules { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 28px; margin: 32px auto; max-width: 500px; text-align: left; }
+        .rules h3 { font-family: var(--font-display); font-weight: 700; margin-bottom: 16px; color: var(--teal); }
+        .rules li { color: var(--muted); font-size: 0.95rem; padding: 8px 0; display: flex; align-items: center; gap: 10px; list-style: none; }
+        .rules li::before { content: '🏃'; font-size: 1.1rem; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 16px 36px; border-radius: 14px; font-weight: 700; font-size: 1rem; cursor: pointer; border: none; transition: all 0.3s ease; font-family: var(--font-body); text-decoration: none; }
+        .btn-primary { background: var(--gradient); color: white; box-shadow: 0 4px 20px rgba(45,212,191,0.3); }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 40px rgba(45,212,191,0.4); }
+        .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--teal); }
+        .game-hud { display: flex; justify-content: space-between; padding: 16px 24px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 24px; }
+        .hud-item { text-align: center; }
+        .hud-label { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .hud-value { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; }
+
+        /* Motor Canvas */
+        .motor-canvas-wrap { position: relative; width: 100%; aspect-ratio: 16/10; background: var(--bg2); border: 1px solid var(--border); border-radius: 24px; overflow: hidden; }
+        canvas { width: 100%; height: 100%; display: block; }
+
+        .challenge-info { text-align: center; padding: 16px; }
+        .challenge-info h3 { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; margin-bottom: 8px; }
+        .challenge-info p { color: var(--muted); font-size: 0.9rem; }
+
+        .accuracy-display { text-align: center; margin-top: 16px; font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; }
+
+        .feedback-msg { text-align: center; margin-top: 20px; font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; animation: feedbackPop 0.4s ease; }
+        @keyframes feedbackPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .results-screen { text-align: center; padding: 40px 20px; }
+        .results-screen h2 { font-family: var(--font-display); font-size: 2.4rem; font-weight: 800; margin-bottom: 8px; }
+        .results-screen .subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 36px; }
+        .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 36px; }
+        .result-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px 16px; }
+        .result-card .label { font-size: 0.8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
+        .result-card .value { font-family: var(--font-display); font-size: 2rem; font-weight: 800; }
+        .value.good { color: var(--green); } .value.moderate { color: var(--amber); } .value.concern { color: var(--pink); }
+        .risk-bar-container { max-width: 400px; margin: 0 auto 36px; }
+        .risk-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
+        .risk-bar { height: 12px; background: rgba(255,255,255,0.06); border-radius: 6px; overflow: hidden; }
+        .risk-fill { height: 100%; border-radius: 6px; transition: width 1.5s ease; }
+        .results-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .hidden { display: none !important; }
+
+        /* Target dots for click challenge */
+        .target-area { position: relative; width: 100%; aspect-ratio: 16/10; background: var(--bg2); border: 1px solid var(--border); border-radius: 24px; overflow: hidden; cursor: crosshair; }
+        .target-dot { position: absolute; border-radius: 50%; transition: transform 0.2s; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .target-dot.target { background: rgba(45,212,191,0.2); border: 3px solid var(--teal); box-shadow: 0 0 20px rgba(45,212,191,0.3); }
+        .target-dot.hit { background: rgba(52,211,153,0.3); border-color: var(--green); transform: scale(0.5); opacity: 0; transition: all 0.3s; }
+        .target-dot .num { font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; color: var(--teal); }
+
+        /* Drag challenge */
+        .drag-item { position: absolute; width: 50px; height: 50px; border-radius: 50%; background: rgba(129,140,248,0.2); border: 3px solid var(--indigo); cursor: grab; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; z-index: 10; transition: box-shadow 0.2s; }
+        .drag-item:active { cursor: grabbing; box-shadow: 0 0 30px rgba(129,140,248,0.5); }
+        .drop-zone { position: absolute; width: 60px; height: 60px; border-radius: 50%; border: 3px dashed rgba(52,211,153,0.4); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .drop-zone.filled { border-style: solid; border-color: var(--green); background: rgba(52,211,153,0.1); }
+    </style>
+</head>
+<body>
+    <nav class="game-nav">
+        <a href="../index.html">← Back to PRISM</a>
+        <div class="title"><span>🏃</span> Motor Match</div>
+        <a href="../dashboard.html">Dashboard →</a>
+    </nav>
+    <div class="game-wrapper">
+        <div id="introScreen" class="intro-screen">
+            <h1>🏃 <span class="gradient-text">Motor Match</span></h1>
+            <p>Test hand-eye coordination, click precision, and motor planning — key indicators for Cerebral Palsy and Autism screening.</p>
+            <div class="rules">
+                <h3>How to Play</h3>
+                <ul>
+                    <li>Click numbered dots <strong>in order</strong> (1, 2, 3...)</li>
+                    <li>Drag shapes to their matching targets</li>
+                    <li>Precision and speed both matter!</li>
+                    <li>Complete <strong>10 rounds</strong> of motor challenges</li>
+                    <li>Difficulty increases each round</li>
+                </ul>
+            </div>
+            <button class="btn btn-primary" onclick="startGame()">▶ Start Game</button>
+        </div>
+
+        <div id="gameScreen" class="hidden">
+            <div class="game-hud">
+                <div class="hud-item"><div class="hud-label">Score</div><div class="hud-value" style="color: var(--green)" id="scoreDisplay">0</div></div>
+                <div class="hud-item"><div class="hud-label">Round</div><div class="hud-value" style="color: var(--teal)" id="roundDisplay">1/10</div></div>
+                <div class="hud-item"><div class="hud-label">Time</div><div class="hud-value" style="color: var(--amber)" id="timeDisplay">0.0s</div></div>
+                <div class="hud-item"><div class="hud-label">Accuracy</div><div class="hud-value" style="color: var(--pink)" id="accDisplay">100%</div></div>
+            </div>
+            <div class="challenge-info" id="challengeInfo">
+                <h3>Connect the Dots!</h3>
+                <p>Click numbered dots in ascending order (1 → 2 → 3...)</p>
+            </div>
+            <div class="target-area" id="targetArea"></div>
+            <div id="feedbackArea"></div>
+        </div>
+
+        <div id="resultsScreen" class="results-screen hidden">
+            <h2>🏃 Assessment Complete!</h2>
+            <p class="subtitle">Here's your motor coordination analysis</p>
+            <div class="results-grid">
+                <div class="result-card"><div class="label">Total Score</div><div class="value good" id="finalScore">0</div></div>
+                <div class="result-card"><div class="label">Avg Precision</div><div class="value" id="finalPrecision">0%</div></div>
+                <div class="result-card"><div class="label">Avg Speed</div><div class="value" id="finalSpeed">0s</div></div>
+                <div class="result-card"><div class="label">Rounds Done</div><div class="value" id="roundsDone">0</div></div>
+                <div class="result-card"><div class="label">Order Errors</div><div class="value" id="orderErrors">0</div></div>
+                <div class="result-card"><div class="label">Motor Grade</div><div class="value" id="motorGrade">—</div></div>
+            </div>
+            <div class="risk-bar-container">
+                <div class="risk-label"><span>Low Risk</span><span>Motor Coordination Risk</span><span>High Risk</span></div>
+                <div class="risk-bar"><div class="risk-fill" id="riskFill"></div></div>
+            </div>
+            <div class="results-actions">
+                <button class="btn btn-primary" onclick="startGame()">🔄 Play Again</button>
+                <button class="btn btn-secondary" onclick="window.location.href='../dashboard.html'">📊 Dashboard</button>
+                <a href="stopsignal.html" class="btn btn-secondary">Next: Stop Signal →</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let gs = { round: 0, totalRounds: 10, score: 0, times: [], orderErrors: 0, roundStart: 0, timerInterval: null, nextDot: 1, totalDots: 0, roundClicks: 0, roundMisclicks: 0 };
+
+        function startGame() {
+            gs = { round: 0, totalRounds: 10, score: 0, times: [], orderErrors: 0, roundStart: 0, timerInterval: null, nextDot: 1, totalDots: 0, roundClicks: 0, roundMisclicks: 0 };
+            document.getElementById('introScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            nextRound();
+        }
+
+        function nextRound() {
+            if (gs.round >= gs.totalRounds) { endGame(); return; }
+            gs.round++;
+            gs.nextDot = 1;
+            gs.roundClicks = 0;
+            gs.roundMisclicks = 0;
+            updateHUD();
+
+            // Alternate between dot-connect and drag challenges
+            if (gs.round % 2 === 1) {
+                dotConnectChallenge();
+            } else {
+                dragChallenge();
+            }
+
+            gs.roundStart = performance.now();
+            clearInterval(gs.timerInterval);
+            gs.timerInterval = setInterval(() => {
+                document.getElementById('timeDisplay').textContent = ((performance.now() - gs.roundStart) / 1000).toFixed(1) + 's';
+            }, 100);
+        }
+
+        function dotConnectChallenge() {
+            const numDots = Math.min(4 + Math.floor(gs.round / 2), 10);
+            gs.totalDots = numDots;
+            const area = document.getElementById('targetArea');
+            const info = document.getElementById('challengeInfo');
+            info.innerHTML = '<h3>🔵 Connect the Dots!</h3><p>Click numbered dots in ascending order (1 → 2 → 3...)</p>';
+
+            area.innerHTML = '';
+            const positions = [];
+            const dotSize = 48;
+            const areaRect = area.getBoundingClientRect();
+
+            for (let i = 0; i < numDots; i++) {
+                let x, y, attempts = 0;
+                do {
+                    x = 30 + Math.random() * (areaRect.width - dotSize - 60);
+                    y = 30 + Math.random() * (areaRect.height - dotSize - 60);
+                    attempts++;
+                } while (attempts < 50 && positions.some(p => Math.hypot(p.x - x, p.y - y) < dotSize * 1.8));
+                positions.push({ x, y });
+
+                const dot = document.createElement('div');
+                dot.className = 'target-dot target';
+                dot.style.width = dotSize + 'px';
+                dot.style.height = dotSize + 'px';
+                dot.style.left = x + 'px';
+                dot.style.top = y + 'px';
+                dot.innerHTML = `<span class="num">${i + 1}</span>`;
+                dot.onclick = () => dotClick(dot, i + 1);
+                area.appendChild(dot);
+            }
+
+            // Click outside = misclick
+            area.onclick = (e) => {
+                if (e.target === area) {
+                    gs.roundMisclicks++;
+                    updateHUD();
+                }
+            };
+        }
+
+        function dotClick(dot, num) {
+            gs.roundClicks++;
+            if (num === gs.nextDot) {
+                dot.classList.add('hit');
+                dot.style.pointerEvents = 'none';
+                gs.nextDot++;
+
+                if (gs.nextDot > gs.totalDots) {
+                    // Round complete
+                    clearInterval(gs.timerInterval);
+                    const rt = performance.now() - gs.roundStart;
+                    gs.times.push(rt);
+                    const precision = Math.max(0, 100 - gs.roundMisclicks * 10);
+                    const timeBonus = Math.max(0, Math.round(200 - rt / 50));
+                    gs.score += precision * 2 + timeBonus;
+                    document.getElementById('feedbackArea').innerHTML = `<div class="feedback-msg" style="color: var(--green)">✅ Great! Precision: ${precision}% | +${precision * 2 + timeBonus}</div>`;
+                    updateHUD();
+                    setTimeout(() => {
+                        document.getElementById('feedbackArea').innerHTML = '';
+                        nextRound();
+                    }, 1200);
+                }
+            } else {
+                gs.orderErrors++;
+                gs.roundMisclicks++;
+                dot.style.animation = 'shake 0.4s ease';
+                setTimeout(() => dot.style.animation = '', 400);
+                document.getElementById('feedbackArea').innerHTML = `<div class="feedback-msg" style="color: var(--red)">❌ Wrong order! Click ${gs.nextDot} next</div>`;
+                setTimeout(() => document.getElementById('feedbackArea').innerHTML = '', 1000);
+                updateHUD();
+            }
+        }
+
+        function dragChallenge() {
+            const numItems = Math.min(2 + Math.floor(gs.round / 3), 5);
+            const shapes = ['🔴', '🟢', '🔵', '🟡', '🟣', '⭐', '💎', '🩵'];
+            const selected = shapes.slice(0, numItems);
+            const area = document.getElementById('targetArea');
+            const info = document.getElementById('challengeInfo');
+            info.innerHTML = '<h3>🧲 Drag & Match!</h3><p>Drag each shape to its matching target zone</p>';
+            area.innerHTML = '';
+
+            const areaRect = area.getBoundingClientRect();
+            let filled = 0;
+
+            // Create drop zones on the right
+            selected.forEach((shape, i) => {
+                const zone = document.createElement('div');
+                zone.className = 'drop-zone';
+                zone.id = `zone-${i}`;
+                zone.dataset.shape = shape;
+                zone.textContent = shape;
+                zone.style.right = '30px';
+                zone.style.top = (30 + i * 80) + 'px';
+                zone.style.opacity = '0.4';
+                area.appendChild(zone);
+            });
+
+            // Create draggable items on the left (shuffled)
+            const shuffled = [...selected].sort(() => Math.random() - 0.5);
+            shuffled.forEach((shape, i) => {
+                const item = document.createElement('div');
+                item.className = 'drag-item';
+                item.id = `drag-${i}`;
+                item.dataset.shape = shape;
+                item.textContent = shape;
+                item.style.left = '30px';
+                item.style.top = (30 + i * 80) + 'px';
+
+                let offsetX, offsetY, isDragging = false;
+
+                item.onpointerdown = (e) => {
+                    isDragging = true;
+                    const rect = item.getBoundingClientRect();
+                    const areaR = area.getBoundingClientRect();
+                    offsetX = e.clientX - rect.left;
+                    offsetY = e.clientY - rect.top;
+                    item.style.zIndex = '20';
+                    item.setPointerCapture(e.pointerId);
+                };
+
+                item.onpointermove = (e) => {
+                    if (!isDragging) return;
+                    const areaR = area.getBoundingClientRect();
+                    item.style.left = (e.clientX - areaR.left - offsetX) + 'px';
+                    item.style.top = (e.clientY - areaR.top - offsetY) + 'px';
+                };
+
+                item.onpointerup = (e) => {
+                    isDragging = false;
+                    item.style.zIndex = '10';
+
+                    // Check if over matching zone
+                    const zones = document.querySelectorAll('.drop-zone:not(.filled)');
+                    const itemR = item.getBoundingClientRect();
+
+                    for (const zone of zones) {
+                        const zoneR = zone.getBoundingClientRect();
+                        if (itemR.left < zoneR.right && itemR.right > zoneR.left &&
+                            itemR.top < zoneR.bottom && itemR.bottom > zoneR.top) {
+                            if (zone.dataset.shape === item.dataset.shape) {
+                                // Correct match!
+                                zone.classList.add('filled');
+                                zone.style.opacity = '1';
+                                item.style.display = 'none';
+                                filled++;
+                                gs.score += 50;
+
+                                if (filled === numItems) {
+                                    clearInterval(gs.timerInterval);
+                                    const rt = performance.now() - gs.roundStart;
+                                    gs.times.push(rt);
+                                    const timeBonus = Math.max(0, Math.round(200 - rt / 50));
+                                    gs.score += timeBonus;
+                                    document.getElementById('feedbackArea').innerHTML = `<div class="feedback-msg" style="color: var(--green)">✅ All matched! +${numItems * 50 + timeBonus}</div>`;
+                                    updateHUD();
+                                    setTimeout(() => {
+                                        document.getElementById('feedbackArea').innerHTML = '';
+                                        nextRound();
+                                    }, 1200);
+                                }
+                                return;
+                            } else {
+                                gs.roundMisclicks++;
+                                updateHUD();
+                            }
+                        }
+                    }
+                };
+
+                area.appendChild(item);
+            });
+        }
+
+        function updateHUD() {
+            document.getElementById('scoreDisplay').textContent = gs.score;
+            document.getElementById('roundDisplay').textContent = `${gs.round}/${gs.totalRounds}`;
+            const totalMisclicks = gs.orderErrors + gs.roundMisclicks;
+            const acc = Math.max(0, 100 - totalMisclicks * 5);
+            document.getElementById('accDisplay').textContent = acc + '%';
+        }
+
+        function endGame() {
+            clearInterval(gs.timerInterval);
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.remove('hidden');
+
+            const avgTime = gs.times.length > 0 ? (gs.times.reduce((a, b) => a + b, 0) / gs.times.length / 1000).toFixed(1) : '0';
+            const precision = Math.max(0, 100 - (gs.orderErrors + gs.roundMisclicks) * 5);
+
+            let grade = 'Needs Work', gradeClass = 'concern';
+            if (precision >= 80 && parseFloat(avgTime) < 5) { grade = 'Excellent'; gradeClass = 'good'; }
+            else if (precision >= 60) { grade = 'Good'; gradeClass = 'good'; }
+            else if (precision >= 40) { grade = 'Average'; gradeClass = 'moderate'; }
+
+            let riskScore = Math.min(100, Math.max(0, Math.round(
+                Math.max(0, (100 - precision) * 0.5) +
+                gs.orderErrors * 8 +
+                Math.max(0, (parseFloat(avgTime) - 4) * 5)
+            )));
+
+            document.getElementById('finalScore').textContent = gs.score;
+            document.getElementById('finalPrecision').textContent = precision + '%';
+            document.getElementById('finalPrecision').className = 'value ' + (precision >= 75 ? 'good' : precision >= 50 ? 'moderate' : 'concern');
+            document.getElementById('finalSpeed').textContent = avgTime + 's';
+            document.getElementById('roundsDone').textContent = gs.round;
+            document.getElementById('orderErrors').textContent = gs.orderErrors;
+            document.getElementById('orderErrors').className = 'value ' + (gs.orderErrors <= 2 ? 'good' : gs.orderErrors <= 5 ? 'moderate' : 'concern');
+            document.getElementById('motorGrade').textContent = grade;
+            document.getElementById('motorGrade').className = 'value ' + gradeClass;
+
+            const fill = document.getElementById('riskFill');
+            fill.style.background = riskScore < 30 ? '#34d399' : riskScore < 60 ? '#fbbf24' : '#ef4444';
+            setTimeout(() => { fill.style.width = riskScore + '%'; }, 100);
+
+            localStorage.setItem('prism_motor_results', JSON.stringify({
+                game: 'motor', score: gs.score, precision, avgTime: parseFloat(avgTime),
+                orderErrors: gs.orderErrors, grade, riskScore, timestamp: Date.now()
+            }));
+        }
+    </script>
+</body>
+</html>

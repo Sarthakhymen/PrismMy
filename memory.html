@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Matrix — PRISM Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0a0f; --bg2: #111118; --card: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.06); --text: #f0f0f5; --muted: #8888a0;
+            --indigo: #818cf8; --cyan: #06b6d4; --pink: #f472b6; --green: #34d399;
+            --amber: #fbbf24; --red: #ef4444; --purple: #a78bfa;
+            --gradient: linear-gradient(135deg, #a78bfa, #818cf8);
+            --font-display: 'Outfit', sans-serif; --font-body: 'Inter', sans-serif;
+        }
+        body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; }
+        .game-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid var(--border); background: rgba(10,10,15,0.9); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100; }
+        .game-nav a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: color 0.3s; }
+        .game-nav a:hover { color: var(--text); }
+        .game-nav .title { font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .game-wrapper { max-width: 800px; margin: 0 auto; padding: 40px 24px; }
+        .intro-screen { text-align: center; padding: 60px 20px; }
+        .intro-screen h1 { font-family: var(--font-display); font-size: 2.8rem; font-weight: 800; margin-bottom: 16px; }
+        .gradient-text { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .intro-screen p { color: var(--muted); font-size: 1.1rem; max-width: 500px; margin: 0 auto 20px; line-height: 1.7; }
+        .rules { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 28px; margin: 32px auto; max-width: 500px; text-align: left; }
+        .rules h3 { font-family: var(--font-display); font-weight: 700; margin-bottom: 16px; color: var(--purple); }
+        .rules li { color: var(--muted); font-size: 0.95rem; padding: 8px 0; display: flex; align-items: center; gap: 10px; list-style: none; }
+        .rules li::before { content: '🧩'; font-size: 1.1rem; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 16px 36px; border-radius: 14px; font-weight: 700; font-size: 1rem; cursor: pointer; border: none; transition: all 0.3s ease; font-family: var(--font-body); text-decoration: none; }
+        .btn-primary { background: var(--gradient); color: white; box-shadow: 0 4px 20px rgba(167,139,250,0.3); }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 40px rgba(167,139,250,0.4); }
+        .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--purple); }
+        .game-hud { display: flex; justify-content: space-between; padding: 16px 24px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 24px; }
+        .hud-item { text-align: center; }
+        .hud-label { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .hud-value { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; }
+
+        .game-area { text-align: center; padding: 20px; }
+        .phase-label { font-size: 0.9rem; color: var(--purple); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; animation: pulse 1.5s ease infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* Memory Grid */
+        .memory-grid { display: inline-grid; gap: 8px; margin: 20px auto; }
+        .mem-cell { width: 70px; height: 70px; background: var(--card); border: 2px solid var(--border); border-radius: 14px; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .mem-cell.active { background: rgba(167,139,250,0.25); border-color: var(--purple); box-shadow: 0 0 20px rgba(167,139,250,0.3); transform: scale(1.05); }
+        .mem-cell.correct { background: rgba(52,211,153,0.2); border-color: var(--green); }
+        .mem-cell.wrong { background: rgba(239,68,68,0.2); border-color: var(--red); animation: shake 0.4s ease; }
+        .mem-cell:hover:not(.disabled) { border-color: var(--purple); transform: scale(1.05); }
+        .mem-cell.disabled { pointer-events: none; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+        .feedback-msg { text-align: center; margin-top: 20px; font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; animation: feedbackPop 0.4s ease; }
+        @keyframes feedbackPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .level-display { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--purple); margin-bottom: 16px; }
+
+        .results-screen { text-align: center; padding: 40px 20px; }
+        .results-screen h2 { font-family: var(--font-display); font-size: 2.4rem; font-weight: 800; margin-bottom: 8px; }
+        .results-screen .subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 36px; }
+        .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 36px; }
+        .result-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px 16px; }
+        .result-card .label { font-size: 0.8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+        .result-card .value { font-family: var(--font-display); font-size: 2rem; font-weight: 800; }
+        .value.good { color: var(--green); } .value.moderate { color: var(--amber); } .value.concern { color: var(--pink); }
+
+        .risk-bar-container { max-width: 400px; margin: 0 auto 36px; }
+        .risk-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
+        .risk-bar { height: 12px; background: rgba(255,255,255,0.06); border-radius: 6px; overflow: hidden; }
+        .risk-fill { height: 100%; border-radius: 6px; transition: width 1.5s ease; }
+        .results-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .hidden { display: none !important; }
+
+        @media (max-width: 600px) {
+            .mem-cell { width: 55px; height: 55px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="game-nav">
+        <a href="../index.html">← Back to PRISM</a>
+        <div class="title"><span>🧩</span> Memory Matrix</div>
+        <a href="../dashboard.html">Dashboard →</a>
+    </nav>
+    <div class="game-wrapper">
+        <div id="introScreen" class="intro-screen">
+            <h1>🧩 <span class="gradient-text">Memory Matrix</span></h1>
+            <p>Test your working memory by watching patterns flash on a grid and repeating them — a key indicator for ADHD & cognitive development.</p>
+            <div class="rules">
+                <h3>How to Play</h3>
+                <ul>
+                    <li>Watch the tiles light up in a pattern</li>
+                    <li>After the pattern ends, repeat it by clicking tiles</li>
+                    <li>Grid size and pattern length <strong>increase</strong> each level</li>
+                    <li>3 mistakes and the game ends</li>
+                    <li>How far can your memory take you?</li>
+                </ul>
+            </div>
+            <button class="btn btn-primary" onclick="startGame()">▶ Start Game</button>
+        </div>
+
+        <div id="gameScreen" class="hidden">
+            <div class="game-hud">
+                <div class="hud-item"><div class="hud-label">Score</div><div class="hud-value" style="color: var(--green)" id="scoreDisplay">0</div></div>
+                <div class="hud-item"><div class="hud-label">Level</div><div class="hud-value" style="color: var(--purple)" id="levelDisplay">1</div></div>
+                <div class="hud-item"><div class="hud-label">Span</div><div class="hud-value" style="color: var(--cyan)" id="spanDisplay">3</div></div>
+                <div class="hud-item"><div class="hud-label">Lives</div><div class="hud-value" style="color: var(--pink)" id="livesDisplay">❤️❤️❤️</div></div>
+            </div>
+            <div id="questionArea" class="game-area"></div>
+        </div>
+
+        <div id="resultsScreen" class="results-screen hidden">
+            <h2>🧩 Assessment Complete!</h2>
+            <p class="subtitle">Here's your working memory analysis</p>
+            <div class="results-grid">
+                <div class="result-card"><div class="label">Total Score</div><div class="value good" id="finalScore">0</div></div>
+                <div class="result-card"><div class="label">Max Span</div><div class="value" id="maxSpan">0</div></div>
+                <div class="result-card"><div class="label">Levels Passed</div><div class="value" id="levelsPassed">0</div></div>
+                <div class="result-card"><div class="label">Accuracy</div><div class="value" id="finalAccuracy">0%</div></div>
+                <div class="result-card"><div class="label">Avg Response</div><div class="value" id="finalAvgTime">0s</div></div>
+                <div class="result-card"><div class="label">Memory Grade</div><div class="value" id="memGrade">—</div></div>
+            </div>
+            <div class="risk-bar-container">
+                <div class="risk-label"><span>Low Risk</span><span>Working Memory Risk</span><span>High Risk</span></div>
+                <div class="risk-bar"><div class="risk-fill" id="riskFill"></div></div>
+            </div>
+            <div class="results-actions">
+                <button class="btn btn-primary" onclick="startGame()">🔄 Play Again</button>
+                <button class="btn btn-secondary" onclick="window.location.href='../dashboard.html'">📊 Dashboard</button>
+                <a href="sound.html" class="btn btn-secondary">Next: Sound Pattern →</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let gs = { level: 0, score: 0, lives: 3, maxSpan: 0, correct: 0, wrong: 0, reactionTimes: [], roundStart: 0, currentSequence: [], userIndex: 0, gridSize: 3 };
+
+        function startGame() {
+            gs = { level: 0, score: 0, lives: 3, maxSpan: 0, correct: 0, wrong: 0, reactionTimes: [], roundStart: 0, currentSequence: [], userIndex: 0, gridSize: 3 };
+            document.getElementById('introScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            nextLevel();
+        }
+
+        function nextLevel() {
+            if (gs.lives <= 0) { endGame(); return; }
+            gs.level++;
+            const span = Math.min(2 + gs.level, 9); // pattern length grows
+            gs.gridSize = gs.level <= 3 ? 3 : gs.level <= 7 ? 4 : 5; // grid grows
+            gs.currentSequence = [];
+            gs.userIndex = 0;
+
+            // Generate random unique sequence
+            const totalCells = gs.gridSize * gs.gridSize;
+            const available = Array.from({ length: totalCells }, (_, i) => i);
+            for (let i = 0; i < span && available.length > 0; i++) {
+                const idx = Math.floor(Math.random() * available.length);
+                gs.currentSequence.push(available.splice(idx, 1)[0]);
+            }
+
+            updateHUD();
+            showGrid(true);
+
+            // Flash the pattern
+            const area = document.getElementById('questionArea');
+            area.querySelector('.phase-label').textContent = '👀 Watch the pattern...';
+
+            let flashIndex = 0;
+            const flashInterval = setInterval(() => {
+                // Clear previous
+                area.querySelectorAll('.mem-cell').forEach(c => c.classList.remove('active'));
+
+                if (flashIndex < gs.currentSequence.length) {
+                    const cell = area.querySelector(`[data-idx="${gs.currentSequence[flashIndex]}"]`);
+                    if (cell) cell.classList.add('active');
+                    flashIndex++;
+                } else {
+                    clearInterval(flashInterval);
+                    // Brief pause then allow input
+                    setTimeout(() => {
+                        area.querySelectorAll('.mem-cell').forEach(c => c.classList.remove('active', 'disabled'));
+                        area.querySelector('.phase-label').textContent = '🎮 Your turn! Repeat the pattern';
+                        area.querySelector('.phase-label').style.animation = 'none';
+                        gs.roundStart = performance.now();
+                    }, 400);
+                }
+            }, 600);
+        }
+
+        function showGrid(disabled) {
+            const area = document.getElementById('questionArea');
+            let cells = '';
+            for (let i = 0; i < gs.gridSize * gs.gridSize; i++) {
+                cells += `<div class="mem-cell ${disabled ? 'disabled' : ''}" data-idx="${i}" onclick="cellClick(this, ${i})"></div>`;
+            }
+            area.innerHTML = `
+                <div class="level-display">Level ${gs.level} — Span: ${gs.currentSequence.length}</div>
+                <div class="phase-label">👀 Watch the pattern...</div>
+                <div class="memory-grid" style="grid-template-columns: repeat(${gs.gridSize}, 1fr)">
+                    ${cells}
+                </div>
+                <div id="feedbackArea"></div>
+            `;
+        }
+
+        function cellClick(cell, idx) {
+            if (gs.currentSequence[gs.userIndex] === idx) {
+                cell.classList.add('correct', 'disabled');
+                gs.userIndex++;
+
+                if (gs.userIndex === gs.currentSequence.length) {
+                    // Level complete!
+                    const rt = performance.now() - gs.roundStart;
+                    gs.reactionTimes.push(rt);
+                    gs.correct++;
+                    gs.maxSpan = Math.max(gs.maxSpan, gs.currentSequence.length);
+                    const bonus = Math.max(0, Math.round(200 - rt / 50));
+                    gs.score += 100 * gs.currentSequence.length + bonus;
+                    document.getElementById('feedbackArea').innerHTML = `<div class="feedback-msg" style="color: var(--green)">✅ Perfect! +${100 * gs.currentSequence.length + bonus}</div>`;
+                    updateHUD();
+                    setTimeout(() => nextLevel(), 1200);
+                }
+            } else {
+                cell.classList.add('wrong');
+                gs.wrong++;
+                gs.lives--;
+                updateHUD();
+
+                // Show correct sequence
+                gs.currentSequence.forEach(si => {
+                    const c = document.querySelector(`[data-idx="${si}"]`);
+                    if (c) c.classList.add('active');
+                });
+                document.querySelectorAll('.mem-cell').forEach(c => c.classList.add('disabled'));
+                document.getElementById('feedbackArea').innerHTML = `<div class="feedback-msg" style="color: var(--red)">❌ Wrong! -1 ❤️</div>`;
+
+                if (gs.lives <= 0) {
+                    setTimeout(() => endGame(), 1200);
+                } else {
+                    setTimeout(() => nextLevel(), 1500);
+                }
+            }
+        }
+
+        function updateHUD() {
+            document.getElementById('scoreDisplay').textContent = gs.score;
+            document.getElementById('levelDisplay').textContent = gs.level;
+            document.getElementById('spanDisplay').textContent = gs.currentSequence.length || '-';
+            document.getElementById('livesDisplay').textContent = '❤️'.repeat(gs.lives) + '🖤'.repeat(3 - gs.lives);
+        }
+
+        function endGame() {
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.remove('hidden');
+
+            const accuracy = gs.correct + gs.wrong > 0 ? Math.round((gs.correct / (gs.correct + gs.wrong)) * 100) : 0;
+            const avgTime = gs.reactionTimes.length > 0 ? (gs.reactionTimes.reduce((a, b) => a + b, 0) / gs.reactionTimes.length / 1000).toFixed(1) : '0';
+
+            let grade = 'Needs Work', gradeClass = 'concern';
+            if (gs.maxSpan >= 7) { grade = 'Excellent'; gradeClass = 'good'; }
+            else if (gs.maxSpan >= 5) { grade = 'Good'; gradeClass = 'good'; }
+            else if (gs.maxSpan >= 3) { grade = 'Average'; gradeClass = 'moderate'; }
+
+            let riskScore = Math.min(100, Math.max(0, Math.round(
+                Math.max(0, (6 - gs.maxSpan) * 15) +
+                Math.max(0, (100 - accuracy) * 0.4) +
+                Math.max(0, (parseFloat(avgTime) - 4) * 8)
+            )));
+
+            document.getElementById('finalScore').textContent = gs.score;
+            document.getElementById('maxSpan').textContent = gs.maxSpan;
+            document.getElementById('maxSpan').className = 'value ' + gradeClass;
+            document.getElementById('levelsPassed').textContent = gs.level - 1;
+            document.getElementById('finalAccuracy').textContent = accuracy + '%';
+            document.getElementById('finalAccuracy').className = 'value ' + (accuracy >= 75 ? 'good' : accuracy >= 50 ? 'moderate' : 'concern');
+            document.getElementById('finalAvgTime').textContent = avgTime + 's';
+            document.getElementById('memGrade').textContent = grade;
+            document.getElementById('memGrade').className = 'value ' + gradeClass;
+
+            const fill = document.getElementById('riskFill');
+            fill.style.background = riskScore < 30 ? '#34d399' : riskScore < 60 ? '#fbbf24' : '#ef4444';
+            setTimeout(() => { fill.style.width = riskScore + '%'; }, 100);
+
+            localStorage.setItem('prism_memory_results', JSON.stringify({
+                game: 'memory', score: gs.score, maxSpan: gs.maxSpan, levelsPassed: gs.level - 1,
+                accuracy, avgTime: parseFloat(avgTime), grade, riskScore, timestamp: Date.now()
+            }));
+        }
+    </script>
+</body>
+</html>

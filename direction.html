@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direction Sense — PRISM Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0a0f; --bg2: #111118; --card: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.06); --text: #f0f0f5; --muted: #8888a0;
+            --indigo: #818cf8; --cyan: #06b6d4; --pink: #f472b6; --green: #34d399;
+            --amber: #fbbf24; --red: #ef4444; --purple: #a78bfa;
+            --gradient: linear-gradient(135deg, #06b6d4, #34d399);
+            --font-display: 'Outfit', sans-serif; --font-body: 'Inter', sans-serif;
+        }
+        body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .game-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid var(--border); background: rgba(10,10,15,0.9); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100; }
+        .game-nav a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: color 0.3s; }
+        .game-nav a:hover { color: var(--text); }
+        .game-nav .title { font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+
+        .game-wrapper { max-width: 800px; margin: 0 auto; padding: 40px 24px; }
+
+        .intro-screen { text-align: center; padding: 60px 20px; }
+        .intro-screen h1 { font-family: var(--font-display); font-size: 2.8rem; font-weight: 800; margin-bottom: 16px; }
+        .gradient-text { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .intro-screen p { color: var(--muted); font-size: 1.1rem; max-width: 500px; margin: 0 auto 20px; line-height: 1.7; }
+        .rules { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 28px; margin: 32px auto; max-width: 500px; text-align: left; }
+        .rules h3 { font-family: var(--font-display); font-weight: 700; margin-bottom: 16px; color: var(--cyan); }
+        .rules li { color: var(--muted); font-size: 0.95rem; padding: 8px 0; display: flex; align-items: center; gap: 10px; }
+        .rules li::before { content: '🧭'; font-size: 1.1rem; }
+
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 16px 36px; border-radius: 14px; font-weight: 700; font-size: 1rem; cursor: pointer; border: none; transition: all 0.3s ease; font-family: var(--font-body); text-decoration: none; }
+        .btn-primary { background: var(--gradient); color: white; box-shadow: 0 4px 20px rgba(6,182,212,0.3); }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 40px rgba(6,182,212,0.4); }
+        .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--cyan); }
+
+        .game-hud { display: flex; justify-content: space-between; padding: 16px 24px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 24px; }
+        .hud-item { text-align: center; }
+        .hud-label { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .hud-value { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; }
+
+        /* Game Area */
+        .game-area { text-align: center; padding: 20px; }
+        .challenge-label { font-size: 0.82rem; color: var(--cyan); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; }
+        .challenge-display { margin: 20px auto; }
+
+        /* Letter Mirror Test */
+        .letter-display { font-family: var(--font-display); font-size: 10rem; font-weight: 900; line-height: 1; margin: 20px 0; animation: letterPop 0.4s ease; }
+        @keyframes letterPop { from { transform: scale(0) rotate(-10deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+        .letter-mirrored { display: inline-block; transform: scaleX(-1); }
+        .letter-rotated { display: inline-block; transform: rotate(180deg); }
+
+        .direction-btns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 400px; margin: 0 auto; }
+        .dir-btn { padding: 18px; background: var(--card); border: 2px solid var(--border); border-radius: 16px; cursor: pointer; transition: all 0.3s; font-family: var(--font-body); font-size: 1rem; font-weight: 600; color: var(--text); }
+        .dir-btn:hover { border-color: var(--cyan); background: rgba(6,182,212,0.06); transform: translateY(-2px); }
+        .dir-btn.correct { border-color: var(--green); background: rgba(52,211,153,0.12); color: var(--green); }
+        .dir-btn.wrong { border-color: var(--red); background: rgba(239,68,68,0.12); color: var(--red); }
+        .dir-btn.disabled { pointer-events: none; opacity: 0.5; }
+
+        /* Arrow Direction Test */
+        .arrow-display { font-size: 8rem; margin: 20px 0; animation: letterPop 0.4s ease; line-height: 1; }
+
+        /* Sequence Memory Test */
+        .sequence-grid { display: grid; grid-template-columns: repeat(3, 80px); gap: 12px; justify-content: center; margin: 20px auto; }
+        .seq-cell { width: 80px; height: 80px; background: var(--card); border: 2px solid var(--border); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; transition: all 0.3s; }
+        .seq-cell.highlight { background: rgba(6,182,212,0.2); border-color: var(--cyan); transform: scale(1.1); }
+        .seq-cell:hover { border-color: var(--cyan); }
+        .seq-cell.correct-seq { background: rgba(52,211,153,0.2); border-color: var(--green); }
+        .seq-cell.wrong-seq { background: rgba(239,68,68,0.2); border-color: var(--red); }
+
+        .question-text { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; margin: 16px 0 24px; }
+
+        .feedback-msg { text-align: center; margin-top: 20px; font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; animation: feedbackPop 0.4s ease; }
+        @keyframes feedbackPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .timer-bar { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; margin-top: 24px; overflow: hidden; }
+        .timer-fill { height: 100%; background: var(--gradient); border-radius: 3px; transition: width 0.1s linear; }
+
+        /* Results */
+        .results-screen { text-align: center; padding: 40px 20px; }
+        .results-screen h2 { font-family: var(--font-display); font-size: 2.4rem; font-weight: 800; margin-bottom: 8px; }
+        .results-screen .subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 36px; }
+        .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 36px; }
+        .result-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px 16px; }
+        .result-card .label { font-size: 0.8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+        .result-card .value { font-family: var(--font-display); font-size: 2rem; font-weight: 800; }
+        .result-card .value.good { color: var(--green); }
+        .result-card .value.moderate { color: var(--amber); }
+        .result-card .value.concern { color: var(--pink); }
+
+        .risk-bar-container { max-width: 400px; margin: 0 auto 36px; }
+        .risk-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
+        .risk-bar { height: 12px; background: rgba(255,255,255,0.06); border-radius: 6px; overflow: hidden; }
+        .risk-fill { height: 100%; border-radius: 6px; transition: width 1.5s ease; }
+
+        .results-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <nav class="game-nav">
+        <a href="../index.html">← Back to PRISM</a>
+        <div class="title"><span>🧭</span> Direction Sense</div>
+        <a href="../dashboard.html">Dashboard →</a>
+    </nav>
+
+    <div class="game-wrapper">
+        <div id="introScreen" class="intro-screen">
+            <h1>🧭 <span class="gradient-text">Direction Sense</span></h1>
+            <p>Test your spatial awareness, letter recognition, and directional processing — key indicators for Dyslexia screening.</p>
+            <div class="rules">
+                <h3>How to Play</h3>
+                <ul>
+                    <li>Identify if letters/numbers are <strong>normal or mirrored</strong></li>
+                    <li>Follow arrow directions accurately</li>
+                    <li>Remember and repeat spatial sequences</li>
+                    <li>Difficulty increases each round</li>
+                    <li>Complete <strong>15 rounds</strong> for your spatial score</li>
+                </ul>
+            </div>
+            <button class="btn btn-primary" onclick="startGame()">▶ Start Game</button>
+        </div>
+
+        <div id="gameScreen" class="hidden">
+            <div class="game-hud">
+                <div class="hud-item"><div class="hud-label">Score</div><div class="hud-value" style="color: var(--green)" id="scoreDisplay">0</div></div>
+                <div class="hud-item"><div class="hud-label">Round</div><div class="hud-value" style="color: var(--cyan)" id="roundDisplay">1/15</div></div>
+                <div class="hud-item"><div class="hud-label">Time</div><div class="hud-value" style="color: var(--amber)" id="timeDisplay">0.0s</div></div>
+                <div class="hud-item"><div class="hud-label">Correct</div><div class="hud-value" style="color: var(--pink)" id="correctDisplay">0</div></div>
+            </div>
+            <div id="questionArea" class="game-area"></div>
+            <div class="timer-bar"><div class="timer-fill" id="timerFill" style="width: 100%"></div></div>
+        </div>
+
+        <div id="resultsScreen" class="results-screen hidden">
+            <h2>🧭 Assessment Complete!</h2>
+            <p class="subtitle">Here's your spatial awareness & directional processing analysis</p>
+            <div class="results-grid">
+                <div class="result-card"><div class="label">Total Score</div><div class="value good" id="finalScore">0</div></div>
+                <div class="result-card"><div class="label">Accuracy</div><div class="value" id="finalAccuracy">0%</div></div>
+                <div class="result-card"><div class="label">Avg Response</div><div class="value" id="finalAvgTime">0ms</div></div>
+                <div class="result-card"><div class="label">Mirror Errors</div><div class="value" id="mirrorErrors">0</div></div>
+                <div class="result-card"><div class="label">Direction Errors</div><div class="value" id="dirErrors">0</div></div>
+                <div class="result-card"><div class="label">Sequence Memory</div><div class="value" id="seqScore">—</div></div>
+            </div>
+            <div class="risk-bar-container">
+                <div class="risk-label"><span>Low Risk</span><span>Dyslexia Risk Indicators</span><span>High Risk</span></div>
+                <div class="risk-bar"><div class="risk-fill" id="riskFill"></div></div>
+            </div>
+            <div class="results-actions">
+                <button class="btn btn-primary" onclick="startGame()">🔄 Play Again</button>
+                <button class="btn btn-secondary" onclick="saveAndContinue()">📊 View Dashboard</button>
+                <a href="../dashboard.html" class="btn btn-secondary">📊 Full Report →</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const mirrorLetters = ['b', 'd', 'p', 'q', 'R', 'J', 'S', 'Z', 'N', 'E'];
+        const arrows = ['⬆️', '⬇️', '⬅️', '➡️', '↗️', '↙️', '↘️', '↖️'];
+        const arrowNames = { '⬆️': 'Up', '⬇️': 'Down', '⬅️': 'Left', '➡️': 'Right', '↗️': 'Up-Right', '↙️': 'Down-Left', '↘️': 'Down-Right', '↖️': 'Up-Left' };
+
+        let gameState = {
+            round: 0, totalRounds: 15, score: 0, correct: 0, wrong: 0,
+            reactionTimes: [], roundStartTime: 0, timerInterval: null,
+            mirrorErrors: 0, directionErrors: 0, sequenceCorrect: 0, sequenceTotal: 0,
+            timePerRound: 12000
+        };
+
+        function startGame() {
+            gameState = {
+                round: 0, totalRounds: 15, score: 0, correct: 0, wrong: 0,
+                reactionTimes: [], roundStartTime: 0, timerInterval: null,
+                mirrorErrors: 0, directionErrors: 0, sequenceCorrect: 0, sequenceTotal: 0,
+                timePerRound: 12000
+            };
+            document.getElementById('introScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            updateHUD();
+            nextRound();
+        }
+
+        function nextRound() {
+            if (gameState.round >= gameState.totalRounds) { endGame(); return; }
+            gameState.round++;
+            gameState.roundStartTime = performance.now();
+            updateHUD();
+
+            // Alternate challenge types
+            const challengeType = gameState.round % 3;
+            if (challengeType === 1) mirrorChallenge();
+            else if (challengeType === 2) arrowChallenge();
+            else sequenceChallenge();
+
+            startTimer();
+        }
+
+        function mirrorChallenge() {
+            const letter = mirrorLetters[Math.floor(Math.random() * mirrorLetters.length)];
+            const isMirrored = Math.random() > 0.5;
+
+            const area = document.getElementById('questionArea');
+            area.innerHTML = `
+                <div class="challenge-label">Mirror Detection</div>
+                <div class="challenge-display">
+                    <div class="letter-display ${isMirrored ? 'letter-mirrored' : ''}">${letter}</div>
+                </div>
+                <div class="question-text">Is this letter normal or mirrored?</div>
+                <div class="direction-btns" id="optionBtns">
+                    <button class="dir-btn" onclick="answerMirror(this, 'normal', ${isMirrored})">✅ Normal</button>
+                    <button class="dir-btn" onclick="answerMirror(this, 'mirrored', ${isMirrored})">🔄 Mirrored</button>
+                </div>
+                <div id="feedbackArea"></div>
+            `;
+        }
+
+        function answerMirror(btn, answer, isMirrored) {
+            clearInterval(gameState.timerInterval);
+            const reactionTime = performance.now() - gameState.roundStartTime;
+            gameState.reactionTimes.push(reactionTime);
+
+            const isCorrect = (answer === 'mirrored') === isMirrored;
+            const allBtns = document.querySelectorAll('.dir-btn');
+            allBtns.forEach(b => b.classList.add('disabled'));
+
+            if (isCorrect) {
+                btn.classList.add('correct');
+                gameState.correct++;
+                const timeBonus = Math.max(0, Math.round(100 - reactionTime / 120));
+                gameState.score += 100 + timeBonus;
+                document.getElementById('feedbackArea').innerHTML = `<div class="feedback-msg" style="color: var(--green)">✅ Correct! +${100 + timeBonus}</div>`;
+            } else {
+                btn.classList.add('wrong');
+                gameState.wrong++;
+                gameState.mirrorErrors++;
+                document.getElementById('feedbackArea').innerHTML = `<div class="feedback-msg" style="color: var(--red)">❌ Wrong! It was ${isMirrored ? 'mirrored' : 'normal'}</div>`;
+            }
+
+            updateHUD();
+            setTimeout(() => nextRound(), 1200);
+        }
+
+        function arrowChallenge() {
+            // Show multiple arrows, ask which direction MOST arrows point
+            const numArrows = Math.min(3 + Math.floor(gameState.round / 3), 7);
+            const mainDir = arrows[Math.floor(Math.random() * 4)]; // Only cardinal directions
+            const arrowList = [];
+
+            // Majority arrows
+            const majority = Math.ceil(numArrows * 0.6);
+            for (let i = 0; i < majority; i++) arrowList.push(mainDir);
+
+            // Distractors
+            for (let i = majority; i < numArrows; i++) {
+                let distractor;
+                do { distractor = arrows[Math.floor(Math.random() * 4)]; } while (distractor === mainDir);
+                arrowList.push(distractor);
+            }
+
+            // Shuffle
+            arrowList.sort(() => Math.random() - 0.5);
+
+            const area = document.getElementById('questionArea');
+            area.innerHTML = `
+                <div class="challenge-label">Direction Detection</div>
+                <div class="challenge-display">
+                    <div class="arrow-display">${arrowList.join(' ')}</div>
+                </div>
+                <div class="question-text">Which direction do MOST arrows point?</div>
+                <div class="direction-btns" id="optionBtns">
+                    <button class="dir-btn" onclick="answerArrow(this, '⬆️', '${mainDir}')">⬆️ Up</button>
+                    <button class="dir-btn" onclick="answerArrow(this, '➡️', '${mainDir}')">➡️ Right</button>
+                    <button class="dir-btn" onclick="answerArrow(this, '⬇️', '${mainDir}')">⬇️ Down</button>
+                    <button class="dir-btn" onclick="answerArrow(this, '⬅️', '${mainDir}')">⬅️ Left</button>
+                </div>
+                <div id="feedbackArea"></div>
+            `;
+        }
+
+        function answerArrow(btn, selected, correct) {
+            clearInterval(gameState.timerInterval);
+            const reactionTime = performance.now() - gameState.roundStartTime;
+            gameState.reactionTimes.push(reactionTime);
+
+            const isCorrect = selected === correct;
+            const allBtns = document.querySelectorAll('.dir-btn');
+            allBtns.forEach(b => b.classList.add('disabled'));
+
+            if (isCorrect) {
+                btn.classList.add('correct');
+                gameState.correct++;
+                const timeBonus = Math.max(0, Math.round(100 - reactionTime / 100));
+                gameState.score += 100 + timeBonus;
+                document.getElementById('feedbackArea').innerHTML = `<div class="feedback-msg" style="color: var(--green)">✅ Correct! +${100 + timeBonus}</div>`;
+            } else {
+                btn.classList.add('wrong');
+                gameState.wrong++;
+                gameState.directionErrors++;
+                allBtns.forEach(b => {
+                    if (b.textContent.includes(correct)) b.classList.add('correct');
+                });
+                document.getElementById('feedbackArea').innerHTML = `<div class="feedback-msg" style="color: var(--red)">❌ The majority pointed ${arrowNames[correct]}</div>`;
+            }
+
+            updateHUD();
+            setTimeout(() => nextRound(), 1200);
+        }
+
+        function sequenceChallenge() {
+            gameState.sequenceTotal++;
+            const seqLength = Math.min(3 + Math.floor(gameState.round / 4), 6);
+            const sequence = [];
+            for (let i = 0; i < seqLength; i++) {
+                let next;
+                do { next = Math.floor(Math.random() * 9); } while (sequence.length > 0 && sequence[sequence.length - 1] === next);
+                sequence.push(next);
+            }
+
+            const emojis = ['🔴', '🔵', '🟢', '🟡', '🟣', '🟠', '⚪', '🩷', '🩵'];
+            const area = document.getElementById('questionArea');
+
+            area.innerHTML = `
+                <div class="challenge-label">Spatial Sequence Memory</div>
+                <div class="question-text">Watch the pattern, then repeat it!</div>
+                <div class="sequence-grid" id="seqGrid">
+                    ${emojis.map((e, i) => `<div class="seq-cell" data-index="${i}">${e}</div>`).join('')}
+                </div>
+                <div id="feedbackArea"><div class="feedback-msg" style="color: var(--cyan)">👀 Watch carefully...</div></div>
+            `;
+
+            // Play sequence
+            let seqIndex = 0;
+            const cells = document.querySelectorAll('.seq-cell');
+            cells.forEach(c => c.style.pointerEvents = 'none');
+
+            const playInterval = setInterval(() => {
+                cells.forEach(c => c.classList.remove('highlight'));
+                if (seqIndex < sequence.length) {
+                    cells[sequence[seqIndex]].classList.add('highlight');
+                    seqIndex++;
+                } else {
+                    clearInterval(playInterval);
+                    // Now let user repeat
+                    document.getElementById('feedbackArea').innerHTML = `<div class="feedback-msg" style="color: var(--amber)">🎮 Your turn! Repeat the pattern</div>`;
+                    cells.forEach(c => c.style.pointerEvents = 'auto');
+
+                    let userSeq = [];
+                    let seqDone = false;
+                    cells.forEach(cell => {
+                        cell.onclick = () => {
+                            if (seqDone) return;
+                            const idx = parseInt(cell.dataset.index);
+                            userSeq.push(idx);
+
+                            const currentPos = userSeq.length - 1;
+                            if (userSeq[currentPos] === sequence[currentPos]) {
+                                cell.classList.add('correct-seq');
+                                setTimeout(() => cell.classList.remove('correct-seq'), 300);
+
+                                if (userSeq.length === sequence.length) {
+                                    seqDone = true;
+                                    clearInterval(gameState.timerInterval);
+                                    const reactionTime = performance.now() - gameState.roundStartTime;
+                                    gameState.reactionTimes.push(reactionTime);
+                                    gameState.correct++;
+                                    gameState.sequenceCorrect++;
+                                    const timeBonus = Math.max(0, Math.round(50 - reactionTime / 200));
+                                    gameState.score += 150 + timeBonus;
+                                    document.getElementById('feedbackArea').innerHTML = `<div class="feedback-msg" style="color: var(--green)">✅ Perfect sequence! +${150 + timeBonus}</div>`;
+                                    updateHUD();
+                                    setTimeout(() => nextRound(), 1200);
+                                }
+                            } else {
+                                seqDone = true;
+                                clearInterval(gameState.timerInterval);
+                                const reactionTime = performance.now() - gameState.roundStartTime;
+                                gameState.reactionTimes.push(reactionTime);
+                                cell.classList.add('wrong-seq');
+                                gameState.wrong++;
+                                document.getElementById('feedbackArea').innerHTML = `<div class="feedback-msg" style="color: var(--red)">❌ Wrong sequence! Got ${userSeq.length - 1}/${sequence.length}</div>`;
+                                updateHUD();
+                                setTimeout(() => nextRound(), 1500);
+                            }
+                        };
+                    });
+                }
+            }, 700);
+        }
+
+        function startTimer() {
+            const fill = document.getElementById('timerFill');
+            fill.style.width = '100%';
+            let remaining = gameState.timePerRound;
+            clearInterval(gameState.timerInterval);
+
+            gameState.timerInterval = setInterval(() => {
+                remaining -= 100;
+                fill.style.width = (remaining / gameState.timePerRound * 100) + '%';
+                fill.style.background = remaining <= 3000 ? 'linear-gradient(135deg, #ef4444, #fbbf24)' : 'var(--gradient)';
+                document.getElementById('timeDisplay').textContent = (remaining / 1000).toFixed(1) + 's';
+
+                if (remaining <= 0) {
+                    clearInterval(gameState.timerInterval);
+                    gameState.wrong++;
+                    gameState.reactionTimes.push(gameState.timePerRound);
+                    document.getElementById('feedbackArea').innerHTML = `<div class="feedback-msg" style="color: var(--amber)">⏰ Time's up!</div>`;
+                    document.querySelectorAll('.dir-btn, .seq-cell').forEach(b => { b.classList.add('disabled'); b.style.pointerEvents = 'none'; });
+                    updateHUD();
+                    setTimeout(() => nextRound(), 1200);
+                }
+            }, 100);
+        }
+
+        function updateHUD() {
+            document.getElementById('scoreDisplay').textContent = gameState.score;
+            document.getElementById('roundDisplay').textContent = `${gameState.round}/${gameState.totalRounds}`;
+            document.getElementById('correctDisplay').textContent = gameState.correct;
+        }
+
+        function endGame() {
+            clearInterval(gameState.timerInterval);
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.remove('hidden');
+
+            const accuracy = gameState.correct + gameState.wrong > 0
+                ? Math.round((gameState.correct / (gameState.correct + gameState.wrong)) * 100) : 0;
+
+            const avgTime = gameState.reactionTimes.length > 0
+                ? Math.round(gameState.reactionTimes.reduce((a, b) => a + b, 0) / gameState.reactionTimes.length) : 0;
+
+            const seqAccuracy = gameState.sequenceTotal > 0
+                ? Math.round((gameState.sequenceCorrect / gameState.sequenceTotal) * 100) + '%' : 'N/A';
+
+            // Risk score
+            let riskScore = 0;
+            riskScore += gameState.mirrorErrors * 10;
+            riskScore += gameState.directionErrors * 8;
+            riskScore += Math.max(0, (100 - accuracy) * 0.4);
+            riskScore += Math.max(0, (avgTime - 3000) / 200);
+            riskScore = Math.min(100, Math.max(0, Math.round(riskScore)));
+
+            document.getElementById('finalScore').textContent = gameState.score;
+            document.getElementById('finalAccuracy').textContent = accuracy + '%';
+            document.getElementById('finalAccuracy').className = 'value ' + (accuracy >= 75 ? 'good' : accuracy >= 50 ? 'moderate' : 'concern');
+            document.getElementById('finalAvgTime').textContent = (avgTime / 1000).toFixed(1) + 's';
+            document.getElementById('mirrorErrors').textContent = gameState.mirrorErrors;
+            document.getElementById('mirrorErrors').className = 'value ' + (gameState.mirrorErrors <= 1 ? 'good' : gameState.mirrorErrors <= 3 ? 'moderate' : 'concern');
+            document.getElementById('dirErrors').textContent = gameState.directionErrors;
+            document.getElementById('dirErrors').className = 'value ' + (gameState.directionErrors <= 1 ? 'good' : gameState.directionErrors <= 3 ? 'moderate' : 'concern');
+            document.getElementById('seqScore').textContent = seqAccuracy;
+
+            const riskFill = document.getElementById('riskFill');
+            riskFill.style.background = riskScore < 30 ? '#34d399' : riskScore < 60 ? '#fbbf24' : '#ef4444';
+            setTimeout(() => { riskFill.style.width = riskScore + '%'; }, 100);
+
+            localStorage.setItem('prism_direction_results', JSON.stringify({
+                game: 'direction', score: gameState.score, accuracy, avgTime,
+                mirrorErrors: gameState.mirrorErrors, directionErrors: gameState.directionErrors,
+                seqAccuracy, riskScore, timestamp: Date.now()
+            }));
+        }
+
+        function saveAndContinue() {
+            alert('Results saved! Check the Dashboard to see your full report.');
+            window.location.href = '../dashboard.html';
+        }
+    </script>
+</body>
+</html>

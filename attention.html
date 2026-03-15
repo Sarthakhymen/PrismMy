@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attention Check — PRISM Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0a0f; --bg2: #111118; --card: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.06); --text: #f0f0f5; --muted: #8888a0;
+            --indigo: #818cf8; --cyan: #06b6d4; --pink: #f472b6; --green: #34d399;
+            --amber: #fbbf24; --red: #ef4444;
+            --gradient: linear-gradient(135deg, #818cf8, #06b6d4);
+            --font-display: 'Outfit', sans-serif; --font-body: 'Inter', sans-serif;
+        }
+        body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+        /* Nav Bar */
+        .game-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid var(--border); background: rgba(10,10,15,0.9); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100; }
+        .game-nav a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; transition: color 0.3s; }
+        .game-nav a:hover { color: var(--text); }
+        .game-nav .title { font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 10px; }
+        .game-nav .title span { font-size: 1.5rem; }
+
+        /* Game Container */
+        .game-wrapper { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+
+        /* Intro Screen */
+        .intro-screen { text-align: center; padding: 60px 20px; }
+        .intro-screen h1 { font-family: var(--font-display); font-size: 2.8rem; font-weight: 800; margin-bottom: 16px; line-height: 1.2; }
+        .intro-screen .gradient-text { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .intro-screen p { color: var(--muted); font-size: 1.1rem; max-width: 500px; margin: 0 auto 20px; line-height: 1.7; }
+        .intro-screen .rules { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 28px; margin: 32px auto; max-width: 500px; text-align: left; }
+        .intro-screen .rules h3 { font-family: var(--font-display); font-weight: 700; margin-bottom: 16px; color: var(--indigo); }
+        .intro-screen .rules li { color: var(--muted); font-size: 0.95rem; padding: 8px 0; display: flex; align-items: center; gap: 10px; }
+        .intro-screen .rules li::before { content: '🎯'; font-size: 1.1rem; }
+
+        /* Buttons */
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 16px 36px; border-radius: 14px; font-weight: 700; font-size: 1rem; cursor: pointer; border: none; transition: all 0.3s ease; font-family: var(--font-body); }
+        .btn-primary { background: var(--gradient); color: white; box-shadow: 0 4px 20px rgba(129,140,248,0.3); }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 40px rgba(129,140,248,0.4); }
+        .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--indigo); background: rgba(129,140,248,0.08); }
+
+        /* Game HUD */
+        .game-hud { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 24px; }
+        .hud-item { text-align: center; }
+        .hud-label { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .hud-value { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; }
+        .hud-value.score { color: var(--green); }
+        .hud-value.round { color: var(--cyan); }
+        .hud-value.time { color: var(--amber); }
+        .hud-value.lives { color: var(--pink); }
+
+        /* Game Board */
+        .game-board { position: relative; width: 100%; aspect-ratio: 16/10; background: var(--bg2); border: 1px solid var(--border); border-radius: 24px; overflow: hidden; cursor: crosshair; user-select: none; }
+        .game-board .instruction { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); padding: 8px 20px; background: rgba(129,140,248,0.15); border: 1px solid rgba(129,140,248,0.3); border-radius: 12px; font-size: 0.85rem; font-weight: 600; color: var(--indigo); z-index: 10; white-space: nowrap; }
+
+        /* Targets */
+        .target { position: absolute; border-radius: 50%; cursor: pointer; transition: transform 0.15s ease; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; animation: targetPop 0.3s ease; }
+        .target:hover { transform: scale(1.15); }
+        .target.correct { background: rgba(52,211,153,0.15); border: 2px solid var(--green); box-shadow: 0 0 20px rgba(52,211,153,0.3); }
+        .target.distractor { background: rgba(244,114,182,0.1); border: 2px solid rgba(244,114,182,0.3); }
+        @keyframes targetPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .click-feedback { position: absolute; border-radius: 50%; pointer-events: none; animation: clickRipple 0.5s ease forwards; }
+        @keyframes clickRipple { 0% { transform: scale(0); opacity: 0.8; } 100% { transform: scale(2); opacity: 0; } }
+
+        /* Score Popup */
+        .score-popup { position: absolute; font-family: var(--font-display); font-weight: 800; font-size: 1.4rem; pointer-events: none; animation: scoreFloat 0.8s ease forwards; z-index: 20; }
+        @keyframes scoreFloat { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-60px) scale(0.5); } }
+
+        /* Results Screen */
+        .results-screen { text-align: center; padding: 40px 20px; }
+        .results-screen h2 { font-family: var(--font-display); font-size: 2.4rem; font-weight: 800; margin-bottom: 8px; }
+        .results-screen .subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 36px; }
+        .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 36px; }
+        .result-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px 16px; }
+        .result-card .label { font-size: 0.8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+        .result-card .value { font-family: var(--font-display); font-size: 2rem; font-weight: 800; }
+        .result-card .value.good { color: var(--green); }
+        .result-card .value.moderate { color: var(--amber); }
+        .result-card .value.concern { color: var(--pink); }
+
+        .risk-bar-container { max-width: 400px; margin: 0 auto 36px; }
+        .risk-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
+        .risk-bar { height: 12px; background: rgba(255,255,255,0.06); border-radius: 6px; overflow: hidden; }
+        .risk-fill { height: 100%; border-radius: 6px; transition: width 1.5s ease; }
+
+        .results-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+        .hidden { display: none !important; }
+
+        /* Countdown */
+        .countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: var(--font-display); font-size: 6rem; font-weight: 900; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: countPulse 0.8s ease; z-index: 20; }
+        @keyframes countPulse { 0% { transform: translate(-50%, -50%) scale(2); opacity: 0; } 50% { opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+    </style>
+</head>
+<body>
+    <nav class="game-nav">
+        <a href="../index.html">← Back to PRISM</a>
+        <div class="title"><span>🎯</span> Attention Check</div>
+        <a href="../dashboard.html">Dashboard →</a>
+    </nav>
+
+    <div class="game-wrapper">
+        <!-- Intro Screen -->
+        <div id="introScreen" class="intro-screen">
+            <h1>🎯 <span class="gradient-text">Attention Check</span></h1>
+            <p>A fun game that measures focus, reaction time, and distraction resistance — key indicators for ADHD screening.</p>
+            <div class="rules">
+                <h3>How to Play</h3>
+                <ul>
+                    <li>Find and click the <strong>⭐ star</strong> among distractors</li>
+                    <li>Be quick — you're timed on each round!</li>
+                    <li>Avoid clicking wrong shapes — you lose a life</li>
+                    <li>Game gets harder with more distractors per round</li>
+                    <li>Complete <strong>15 rounds</strong> for your attention score</li>
+                </ul>
+            </div>
+            <button class="btn btn-primary" id="startBtn" onclick="startGame()">▶ Start Game</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="hidden">
+            <div class="game-hud">
+                <div class="hud-item"><div class="hud-label">Score</div><div class="hud-value score" id="scoreDisplay">0</div></div>
+                <div class="hud-item"><div class="hud-label">Round</div><div class="hud-value round" id="roundDisplay">1/15</div></div>
+                <div class="hud-item"><div class="hud-label">Time</div><div class="hud-value time" id="timeDisplay">0.0s</div></div>
+                <div class="hud-item"><div class="hud-label">Lives</div><div class="hud-value lives" id="livesDisplay">❤️❤️❤️</div></div>
+            </div>
+            <div class="game-board" id="gameBoard">
+                <div class="instruction" id="boardInstruction">Find the ⭐ Star!</div>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="resultsScreen" class="results-screen hidden">
+            <h2>🎯 Assessment Complete!</h2>
+            <p class="subtitle">Here's your attention & focus analysis</p>
+            <div class="results-grid">
+                <div class="result-card">
+                    <div class="label">Total Score</div>
+                    <div class="value good" id="finalScore">0</div>
+                </div>
+                <div class="result-card">
+                    <div class="label">Avg Reaction Time</div>
+                    <div class="value" id="avgReaction">0ms</div>
+                </div>
+                <div class="result-card">
+                    <div class="label">Accuracy</div>
+                    <div class="value" id="accuracy">0%</div>
+                </div>
+                <div class="result-card">
+                    <div class="label">Focus Consistency</div>
+                    <div class="value" id="consistency">—</div>
+                </div>
+                <div class="result-card">
+                    <div class="label">Distraction Hits</div>
+                    <div class="value" id="distractionHits">0</div>
+                </div>
+                <div class="result-card">
+                    <div class="label">Rounds Completed</div>
+                    <div class="value" id="roundsCompleted">0</div>
+                </div>
+            </div>
+            <div class="risk-bar-container">
+                <div class="risk-label"><span>Low Risk</span><span>Attention Risk Score</span><span>High Risk</span></div>
+                <div class="risk-bar"><div class="risk-fill" id="riskFill"></div></div>
+            </div>
+            <div class="results-actions">
+                <button class="btn btn-primary" onclick="startGame()">🔄 Play Again</button>
+                <button class="btn btn-secondary" onclick="saveAndContinue()">📊 Save & Continue</button>
+                <a href="../games/emotion.html" class="btn btn-secondary">Next: Emotion Lab →</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let gameState = {
+            round: 0,
+            totalRounds: 15,
+            score: 0,
+            lives: 3,
+            reactionTimes: [],
+            wrongClicks: 0,
+            correctClicks: 0,
+            roundStartTime: 0,
+            timerInterval: null,
+            isPlaying: false
+        };
+
+        const distractorEmojis = ['🔴', '🟡', '🟢', '🔵', '🟣', '🟠', '💜', '💙', '🩵', '🩷', '❤️‍🔥', '🧡'];
+        const targetEmoji = '⭐';
+
+        function startGame() {
+            gameState = {
+                round: 0, totalRounds: 15, score: 0, lives: 3,
+                reactionTimes: [], wrongClicks: 0, correctClicks: 0,
+                roundStartTime: 0, timerInterval: null, isPlaying: false
+            };
+            document.getElementById('introScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            updateHUD();
+            countdown(3, () => nextRound());
+        }
+
+        function countdown(seconds, callback) {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '<div class="instruction" id="boardInstruction">Get Ready!</div>';
+            let count = seconds;
+            const countEl = document.createElement('div');
+            countEl.className = 'countdown';
+            countEl.textContent = count;
+            board.appendChild(countEl);
+
+            const interval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countEl.textContent = count;
+                    countEl.style.animation = 'none';
+                    countEl.offsetHeight;
+                    countEl.style.animation = 'countPulse 0.8s ease';
+                } else {
+                    countEl.textContent = 'GO!';
+                    countEl.style.animation = 'none';
+                    countEl.offsetHeight;
+                    countEl.style.animation = 'countPulse 0.8s ease';
+                    clearInterval(interval);
+                    setTimeout(callback, 500);
+                }
+            }, 800);
+        }
+
+        function nextRound() {
+            if (gameState.round >= gameState.totalRounds || gameState.lives <= 0) {
+                endGame();
+                return;
+            }
+            gameState.round++;
+            gameState.isPlaying = true;
+            updateHUD();
+            spawnTargets();
+            gameState.roundStartTime = performance.now();
+
+            // Start timer display
+            clearInterval(gameState.timerInterval);
+            gameState.timerInterval = setInterval(() => {
+                const elapsed = ((performance.now() - gameState.roundStartTime) / 1000).toFixed(1);
+                document.getElementById('timeDisplay').textContent = elapsed + 's';
+            }, 100);
+        }
+
+        function spawnTargets() {
+            const board = document.getElementById('gameBoard');
+            const boardRect = board.getBoundingClientRect();
+            board.innerHTML = '<div class="instruction" id="boardInstruction">Find the ⭐ Star!</div>';
+
+            // Number of distractors increases with round
+            const numDistractors = Math.min(3 + gameState.round * 2, 25);
+            const size = Math.max(50, 70 - gameState.round * 2);
+            const positions = [];
+
+            function getRandomPosition() {
+                const margin = 20;
+                let attempts = 0;
+                while (attempts < 100) {
+                    const x = margin + Math.random() * (boardRect.width - size - margin * 2);
+                    const y = 50 + Math.random() * (boardRect.height - size - 70);
+                    let overlap = false;
+                    for (let pos of positions) {
+                        if (Math.abs(x - pos.x) < size && Math.abs(y - pos.y) < size) {
+                            overlap = true; break;
+                        }
+                    }
+                    if (!overlap) { positions.push({ x, y }); return { x, y }; }
+                    attempts++;
+                }
+                const x = margin + Math.random() * (boardRect.width - size - margin * 2);
+                const y = 50 + Math.random() * (boardRect.height - size - 70);
+                positions.push({ x, y });
+                return { x, y };
+            }
+
+            // Place target
+            const targetPos = getRandomPosition();
+            const target = document.createElement('div');
+            target.className = 'target correct';
+            target.style.width = size + 'px';
+            target.style.height = size + 'px';
+            target.style.left = targetPos.x + 'px';
+            target.style.top = targetPos.y + 'px';
+            target.textContent = targetEmoji;
+            target.onclick = () => handleCorrectClick(target);
+            board.appendChild(target);
+
+            // Place distractors
+            for (let i = 0; i < numDistractors; i++) {
+                const pos = getRandomPosition();
+                const distractor = document.createElement('div');
+                distractor.className = 'target distractor';
+                distractor.style.width = size + 'px';
+                distractor.style.height = size + 'px';
+                distractor.style.left = pos.x + 'px';
+                distractor.style.top = pos.y + 'px';
+                distractor.textContent = distractorEmojis[Math.floor(Math.random() * distractorEmojis.length)];
+                distractor.onclick = (e) => handleWrongClick(distractor, e);
+                // Some distractors move to increase difficulty
+                if (gameState.round > 5 && Math.random() > 0.6) {
+                    distractor.style.animation = `targetDrift ${2 + Math.random() * 3}s ease-in-out infinite alternate`;
+                }
+                board.appendChild(distractor);
+            }
+
+            // Add CSS for moving distractors
+            if (!document.getElementById('driftStyle')) {
+                const style = document.createElement('style');
+                style.id = 'driftStyle';
+                style.textContent = `
+                    @keyframes targetDrift {
+                        0% { transform: translate(0, 0); }
+                        100% { transform: translate(${Math.random() > 0.5 ? '' : '-'}${15 + Math.random() * 20}px, ${Math.random() > 0.5 ? '' : '-'}${10 + Math.random() * 15}px); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+
+        function handleCorrectClick(element) {
+            if (!gameState.isPlaying) return;
+            gameState.isPlaying = false;
+            clearInterval(gameState.timerInterval);
+
+            const reactionTime = performance.now() - gameState.roundStartTime;
+            gameState.reactionTimes.push(reactionTime);
+            gameState.correctClicks++;
+
+            // Score: faster = more points, base 100 per round
+            const timeBonus = Math.max(0, Math.round(200 - reactionTime / 20));
+            const roundScore = 100 + timeBonus;
+            gameState.score += roundScore;
+
+            // Visual feedback
+            element.style.background = 'rgba(52,211,153,0.3)';
+            element.style.transform = 'scale(1.3)';
+            element.style.boxShadow = '0 0 40px rgba(52,211,153,0.6)';
+
+            showScorePopup(element, `+${roundScore}`, '#34d399');
+            updateHUD();
+
+            setTimeout(() => nextRound(), 800);
+        }
+
+        function handleWrongClick(element, event) {
+            if (!gameState.isPlaying) return;
+            gameState.wrongClicks++;
+            gameState.lives--;
+
+            element.style.background = 'rgba(239,68,68,0.3)';
+            element.style.border = '2px solid #ef4444';
+            element.style.transform = 'scale(0.8)';
+
+            showScorePopup(element, '-1 ❤️', '#ef4444');
+
+            // Show click feedback
+            const board = document.getElementById('gameBoard');
+            const rect = board.getBoundingClientRect();
+            const ripple = document.createElement('div');
+            ripple.className = 'click-feedback';
+            ripple.style.left = (event.clientX - rect.left - 15) + 'px';
+            ripple.style.top = (event.clientY - rect.top - 15) + 'px';
+            ripple.style.width = '30px';
+            ripple.style.height = '30px';
+            ripple.style.background = 'rgba(239,68,68,0.4)';
+            board.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 500);
+
+            updateHUD();
+
+            if (gameState.lives <= 0) {
+                gameState.isPlaying = false;
+                clearInterval(gameState.timerInterval);
+                setTimeout(() => endGame(), 500);
+            }
+        }
+
+        function showScorePopup(element, text, color) {
+            const popup = document.createElement('div');
+            popup.className = 'score-popup';
+            popup.textContent = text;
+            popup.style.color = color;
+            popup.style.left = element.style.left;
+            popup.style.top = (parseInt(element.style.top) - 20) + 'px';
+            document.getElementById('gameBoard').appendChild(popup);
+            setTimeout(() => popup.remove(), 800);
+        }
+
+        function updateHUD() {
+            document.getElementById('scoreDisplay').textContent = gameState.score;
+            document.getElementById('roundDisplay').textContent = `${gameState.round}/${gameState.totalRounds}`;
+            document.getElementById('livesDisplay').textContent = '❤️'.repeat(gameState.lives) + '🖤'.repeat(3 - gameState.lives);
+        }
+
+        function endGame() {
+            clearInterval(gameState.timerInterval);
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.remove('hidden');
+
+            const avgReaction = gameState.reactionTimes.length > 0
+                ? gameState.reactionTimes.reduce((a, b) => a + b, 0) / gameState.reactionTimes.length
+                : 0;
+
+            const accuracy = gameState.correctClicks + gameState.wrongClicks > 0
+                ? Math.round((gameState.correctClicks / (gameState.correctClicks + gameState.wrongClicks)) * 100)
+                : 0;
+
+            // Calculate consistency (standard deviation of reaction times)
+            let consistency = 'N/A';
+            if (gameState.reactionTimes.length > 2) {
+                const mean = avgReaction;
+                const variance = gameState.reactionTimes.reduce((sum, t) => sum + Math.pow(t - mean, 2), 0) / gameState.reactionTimes.length;
+                const stdDev = Math.sqrt(variance);
+                const cv = (stdDev / mean) * 100;
+                if (cv < 25) consistency = 'Stable';
+                else if (cv < 45) consistency = 'Moderate';
+                else consistency = 'Variable';
+            }
+
+            // Risk score (0-100, higher = more risk)
+            let riskScore = 0;
+            riskScore += Math.min(30, Math.max(0, (avgReaction - 800) / 40));       // Slow reactions
+            riskScore += Math.min(25, gameState.wrongClicks * 8);                     // Wrong clicks
+            riskScore += Math.min(25, Math.max(0, (gameState.totalRounds - gameState.round) * 5)); // Incomplete
+            riskScore += consistency === 'Variable' ? 20 : consistency === 'Moderate' ? 10 : 0;
+            riskScore = Math.min(100, Math.max(0, Math.round(riskScore)));
+
+            // Update display
+            document.getElementById('finalScore').textContent = gameState.score;
+            document.getElementById('avgReaction').textContent = Math.round(avgReaction) + 'ms';
+            document.getElementById('accuracy').textContent = accuracy + '%';
+            document.getElementById('consistency').textContent = consistency;
+            document.getElementById('distractionHits').textContent = gameState.wrongClicks;
+            document.getElementById('roundsCompleted').textContent = gameState.round;
+
+            // Color code results
+            const avgEl = document.getElementById('avgReaction');
+            avgEl.className = 'value ' + (avgReaction < 1200 ? 'good' : avgReaction < 2500 ? 'moderate' : 'concern');
+
+            const accEl = document.getElementById('accuracy');
+            accEl.className = 'value ' + (accuracy >= 80 ? 'good' : accuracy >= 60 ? 'moderate' : 'concern');
+
+            const conEl = document.getElementById('consistency');
+            conEl.className = 'value ' + (consistency === 'Stable' ? 'good' : consistency === 'Moderate' ? 'moderate' : 'concern');
+
+            const distEl = document.getElementById('distractionHits');
+            distEl.className = 'value ' + (gameState.wrongClicks <= 1 ? 'good' : gameState.wrongClicks <= 3 ? 'moderate' : 'concern');
+
+            // Risk bar
+            const riskFill = document.getElementById('riskFill');
+            const riskColor = riskScore < 30 ? '#34d399' : riskScore < 60 ? '#fbbf24' : '#ef4444';
+            riskFill.style.background = riskColor;
+            setTimeout(() => { riskFill.style.width = riskScore + '%'; }, 100);
+
+            // Save results to localStorage
+            const results = {
+                game: 'attention',
+                score: gameState.score,
+                avgReaction: Math.round(avgReaction),
+                accuracy,
+                consistency,
+                wrongClicks: gameState.wrongClicks,
+                roundsCompleted: gameState.round,
+                riskScore,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('prism_attention_results', JSON.stringify(results));
+        }
+
+        function saveAndContinue() {
+            alert('Results saved! Check the Dashboard to see your full report.');
+            window.location.href = '../dashboard.html';
+        }
+    </script>
+</body>
+</html>

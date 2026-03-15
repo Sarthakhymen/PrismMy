@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stop Signal — PRISM Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0a0f; --bg2: #111118; --card: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.06); --text: #f0f0f5; --muted: #8888a0;
+            --indigo: #818cf8; --cyan: #06b6d4; --pink: #f472b6; --green: #34d399;
+            --amber: #fbbf24; --red: #ef4444;
+            --gradient: linear-gradient(135deg, #ef4444, #f472b6);
+            --font-display: 'Outfit', sans-serif; --font-body: 'Inter', sans-serif;
+        }
+        body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; }
+        .game-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid var(--border); background: rgba(10,10,15,0.9); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100; }
+        .game-nav a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: color 0.3s; }
+        .game-nav a:hover { color: var(--text); }
+        .game-nav .title { font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .game-wrapper { max-width: 800px; margin: 0 auto; padding: 40px 24px; }
+        .intro-screen { text-align: center; padding: 60px 20px; }
+        .intro-screen h1 { font-family: var(--font-display); font-size: 2.8rem; font-weight: 800; margin-bottom: 16px; }
+        .gradient-text { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .intro-screen p { color: var(--muted); font-size: 1.1rem; max-width: 500px; margin: 0 auto 20px; line-height: 1.7; }
+        .rules { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 28px; margin: 32px auto; max-width: 500px; text-align: left; }
+        .rules h3 { font-family: var(--font-display); font-weight: 700; margin-bottom: 16px; color: var(--red); }
+        .rules li { color: var(--muted); font-size: 0.95rem; padding: 8px 0; display: flex; align-items: center; gap: 10px; list-style: none; }
+        .rules li::before { content: '🚦'; font-size: 1.1rem; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 16px 36px; border-radius: 14px; font-weight: 700; font-size: 1rem; cursor: pointer; border: none; transition: all 0.3s ease; font-family: var(--font-body); text-decoration: none; }
+        .btn-primary { background: var(--gradient); color: white; box-shadow: 0 4px 20px rgba(239,68,68,0.3); }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 40px rgba(239,68,68,0.4); }
+        .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--red); }
+        .game-hud { display: flex; justify-content: space-between; padding: 16px 24px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 24px; }
+        .hud-item { text-align: center; }
+        .hud-label { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .hud-value { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; }
+
+        /* Signal Display */
+        .signal-stage { text-align: center; padding: 60px 20px; }
+        .signal-circle { width: 200px; height: 200px; border-radius: 50%; margin: 30px auto; display: flex; align-items: center; justify-content: center; font-size: 5rem; transition: all 0.2s ease; }
+        .signal-go { background: rgba(52,211,153,0.15); border: 4px solid var(--green); box-shadow: 0 0 60px rgba(52,211,153,0.3); animation: signalPulse 0.3s ease; }
+        .signal-stop { background: rgba(239,68,68,0.15); border: 4px solid var(--red); box-shadow: 0 0 60px rgba(239,68,68,0.3); animation: signalPulse 0.3s ease; }
+        .signal-wait { background: rgba(255,255,255,0.03); border: 4px solid var(--border); }
+        .signal-correct { background: rgba(52,211,153,0.25); border-color: var(--green); }
+        .signal-wrong { background: rgba(239,68,68,0.25); border-color: var(--red); animation: shake 0.4s ease; }
+        @keyframes signalPulse { from { transform: scale(0.8); } to { transform: scale(1); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+
+        .signal-instruction { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; margin-top: 20px; }
+        .signal-sub { color: var(--muted); font-size: 0.95rem; margin-top: 8px; }
+
+        .response-btn { width: 100%; max-width: 400px; padding: 20px; margin: 24px auto 0; display: block; background: rgba(52,211,153,0.08); border: 3px solid rgba(52,211,153,0.3); border-radius: 20px; color: var(--green); font-family: var(--font-display); font-size: 1.3rem; font-weight: 800; cursor: pointer; transition: all 0.2s; }
+        .response-btn:hover { background: rgba(52,211,153,0.15); transform: scale(1.02); }
+        .response-btn:active { transform: scale(0.98); }
+        .response-btn.disabled { pointer-events: none; opacity: 0.3; }
+
+        .feedback-msg { text-align: center; margin-top: 20px; font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; animation: feedbackPop 0.4s ease; min-height: 40px; }
+        @keyframes feedbackPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .results-screen { text-align: center; padding: 40px 20px; }
+        .results-screen h2 { font-family: var(--font-display); font-size: 2.4rem; font-weight: 800; margin-bottom: 8px; }
+        .results-screen .subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 36px; }
+        .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 36px; }
+        .result-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px 16px; }
+        .result-card .label { font-size: 0.8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
+        .result-card .value { font-family: var(--font-display); font-size: 2rem; font-weight: 800; }
+        .value.good { color: var(--green); } .value.moderate { color: var(--amber); } .value.concern { color: var(--pink); }
+        .risk-bar-container { max-width: 400px; margin: 0 auto 36px; }
+        .risk-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
+        .risk-bar { height: 12px; background: rgba(255,255,255,0.06); border-radius: 6px; overflow: hidden; }
+        .risk-fill { height: 100%; border-radius: 6px; transition: width 1.5s ease; }
+        .results-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <nav class="game-nav">
+        <a href="../index.html">← Back to PRISM</a>
+        <div class="title"><span>🚦</span> Stop Signal</div>
+        <a href="../dashboard.html">Dashboard →</a>
+    </nav>
+    <div class="game-wrapper">
+        <div id="introScreen" class="intro-screen">
+            <h1>🚦 <span class="gradient-text">Stop Signal</span></h1>
+            <p>A gold-standard test for impulse control and response inhibition — the core deficit in ADHD (based on clinical Stop Signal Task).</p>
+            <div class="rules">
+                <h3>How to Play</h3>
+                <ul>
+                    <li>When you see 🟢 <strong>GREEN</strong> → Press the button QUICKLY!</li>
+                    <li>When you see 🔴 <strong>RED</strong> → DON'T press! Hold back!</li>
+                    <li>Red signals appear <strong>after</strong> green — can you stop in time?</li>
+                    <li>Speed matters, but so does <strong>self-control</strong></li>
+                    <li>Complete <strong>25 trials</strong> for your impulse score</li>
+                </ul>
+            </div>
+            <button class="btn btn-primary" onclick="startGame()">▶ Start Game</button>
+        </div>
+
+        <div id="gameScreen" class="hidden">
+            <div class="game-hud">
+                <div class="hud-item"><div class="hud-label">Trial</div><div class="hud-value" style="color: var(--cyan)" id="trialDisplay">0/25</div></div>
+                <div class="hud-item"><div class="hud-label">Go Score</div><div class="hud-value" style="color: var(--green)" id="goDisplay">0</div></div>
+                <div class="hud-item"><div class="hud-label">Stop Score</div><div class="hud-value" style="color: var(--red)" id="stopDisplay">0</div></div>
+                <div class="hud-item"><div class="hud-label">Avg RT</div><div class="hud-value" style="color: var(--amber)" id="rtDisplay">—</div></div>
+            </div>
+            <div id="signalArea" class="signal-stage">
+                <div class="signal-circle signal-wait" id="signalCircle">⏳</div>
+                <div class="signal-instruction" id="signalText">Get ready...</div>
+                <div class="signal-sub" id="signalSub">A signal will appear shortly</div>
+                <button class="response-btn disabled" id="responseBtn" onclick="respond()">⚡ PRESS!</button>
+                <div class="feedback-msg" id="feedbackArea"></div>
+            </div>
+        </div>
+
+        <div id="resultsScreen" class="results-screen hidden">
+            <h2>🚦 Assessment Complete!</h2>
+            <p class="subtitle">Here's your impulse control analysis</p>
+            <div class="results-grid">
+                <div class="result-card"><div class="label">Go Accuracy</div><div class="value" id="goAcc">0%</div></div>
+                <div class="result-card"><div class="label">Stop Accuracy</div><div class="value" id="stopAcc">0%</div></div>
+                <div class="result-card"><div class="label">Avg Go RT</div><div class="value" id="avgGoRT">0ms</div></div>
+                <div class="result-card"><div class="label">SSRT</div><div class="value" id="ssrt">0ms</div></div>
+                <div class="result-card"><div class="label">Commission Errors</div><div class="value" id="commErrors">0</div></div>
+                <div class="result-card"><div class="label">Omission Errors</div><div class="value" id="omErrors">0</div></div>
+            </div>
+            <div class="risk-bar-container">
+                <div class="risk-label"><span>Low Risk</span><span>Impulse Control Risk (ADHD)</span><span>High Risk</span></div>
+                <div class="risk-bar"><div class="risk-fill" id="riskFill"></div></div>
+            </div>
+            <div class="results-actions">
+                <button class="btn btn-primary" onclick="startGame()">🔄 Play Again</button>
+                <button class="btn btn-secondary" onclick="window.location.href='../dashboard.html'">📊 Full Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let gs = {
+            trial: 0, totalTrials: 25,
+            goCorrect: 0, goMissed: 0, // omission errors
+            stopCorrect: 0, stopFailed: 0, // commission errors
+            goRTs: [], stopDelay: 250, // SSD (Stop Signal Delay) in ms
+            isStopTrial: false, currentState: 'wait', // wait, go, stop, responded, done
+            signalTime: 0, responded: false, trialTimeout: null,
+            ssdHistory: []
+        };
+
+        function startGame() {
+            gs = {
+                trial: 0, totalTrials: 25,
+                goCorrect: 0, goMissed: 0,
+                stopCorrect: 0, stopFailed: 0,
+                goRTs: [], stopDelay: 250,
+                isStopTrial: false, currentState: 'wait',
+                signalTime: 0, responded: false, trialTimeout: null,
+                ssdHistory: []
+            };
+            document.getElementById('introScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            setTimeout(() => nextTrial(), 1000);
+        }
+
+        function nextTrial() {
+            if (gs.trial >= gs.totalTrials) { endGame(); return; }
+            gs.trial++;
+            gs.responded = false;
+            gs.currentState = 'wait';
+
+            // ~30% stop trials
+            gs.isStopTrial = Math.random() < 0.3;
+
+            updateHUD();
+
+            const circle = document.getElementById('signalCircle');
+            const text = document.getElementById('signalText');
+            const sub = document.getElementById('signalSub');
+            const btn = document.getElementById('responseBtn');
+            const fb = document.getElementById('feedbackArea');
+
+            circle.className = 'signal-circle signal-wait';
+            circle.textContent = '⏳';
+            text.textContent = 'Get ready...';
+            sub.textContent = `Trial ${gs.trial} of ${gs.totalTrials}`;
+            btn.classList.add('disabled');
+            fb.innerHTML = '';
+
+            // Random wait before GO signal (1-3 seconds)
+            const waitTime = 1000 + Math.random() * 2000;
+
+            setTimeout(() => {
+                // Show GO signal
+                gs.currentState = 'go';
+                gs.signalTime = performance.now();
+                circle.className = 'signal-circle signal-go';
+                circle.textContent = '🟢';
+                text.textContent = 'GO! Press now!';
+                text.style.color = 'var(--green)';
+                btn.classList.remove('disabled');
+
+                if (gs.isStopTrial) {
+                    // After SSD, switch to STOP
+                    setTimeout(() => {
+                        if (!gs.responded && gs.currentState === 'go') {
+                            gs.currentState = 'stop';
+                            circle.className = 'signal-circle signal-stop';
+                            circle.textContent = '🔴';
+                            text.textContent = 'STOP! Don\'t press!';
+                            text.style.color = 'var(--red)';
+                        }
+                    }, gs.stopDelay);
+                }
+
+                // Timeout (miss if go trial, correct if stop trial)
+                gs.trialTimeout = setTimeout(() => {
+                    if (!gs.responded) {
+                        if (gs.isStopTrial) {
+                            // Successfully stopped
+                            gs.stopCorrect++;
+                            circle.className = 'signal-circle signal-correct';
+                            fb.innerHTML = `<div class="feedback-msg" style="color: var(--green)">✅ Great self-control!</div>`;
+                            // Make stopping harder (adaptive SSD)
+                            gs.stopDelay = Math.min(gs.stopDelay + 50, 800);
+                        } else {
+                            // Missed go trial (omission error)
+                            gs.goMissed++;
+                            circle.className = 'signal-circle signal-wrong';
+                            fb.innerHTML = `<div class="feedback-msg" style="color: var(--amber)">⚠️ Too slow! Press faster on green</div>`;
+                        }
+                        btn.classList.add('disabled');
+                        gs.currentState = 'done';
+                        updateHUD();
+                        setTimeout(() => nextTrial(), 1500);
+                    }
+                }, 1500);
+            }, waitTime);
+        }
+
+        function respond() {
+            if (gs.responded || gs.currentState === 'wait' || gs.currentState === 'done') return;
+            gs.responded = true;
+            clearTimeout(gs.trialTimeout);
+
+            const rt = performance.now() - gs.signalTime;
+            const circle = document.getElementById('signalCircle');
+            const btn = document.getElementById('responseBtn');
+            const fb = document.getElementById('feedbackArea');
+            btn.classList.add('disabled');
+
+            if (gs.currentState === 'go' && !gs.isStopTrial) {
+                // Correct GO response
+                gs.goCorrect++;
+                gs.goRTs.push(rt);
+                circle.className = 'signal-circle signal-correct';
+                fb.innerHTML = `<div class="feedback-msg" style="color: var(--green)">✅ Hit! ${Math.round(rt)}ms</div>`;
+            } else if (gs.currentState === 'stop' || (gs.currentState === 'go' && gs.isStopTrial)) {
+                // Commission error — pressed on stop trial
+                gs.stopFailed++;
+                gs.goRTs.push(rt);
+                circle.className = 'signal-circle signal-wrong';
+                fb.innerHTML = `<div class="feedback-msg" style="color: var(--red)">❌ Should have stopped!</div>`;
+                // Make stopping easier (adaptive SSD)
+                gs.stopDelay = Math.max(gs.stopDelay - 50, 100);
+            }
+
+            gs.ssdHistory.push(gs.stopDelay);
+            gs.currentState = 'done';
+            updateHUD();
+            setTimeout(() => nextTrial(), 1500);
+        }
+
+        // Also respond on spacebar
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                respond();
+            }
+        });
+
+        function updateHUD() {
+            document.getElementById('trialDisplay').textContent = `${gs.trial}/${gs.totalTrials}`;
+            document.getElementById('goDisplay').textContent = gs.goCorrect;
+            document.getElementById('stopDisplay').textContent = gs.stopCorrect;
+            const avgRT = gs.goRTs.length > 0 ? Math.round(gs.goRTs.reduce((a, b) => a + b, 0) / gs.goRTs.length) : '—';
+            document.getElementById('rtDisplay').textContent = typeof avgRT === 'number' ? avgRT + 'ms' : avgRT;
+        }
+
+        function endGame() {
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.remove('hidden');
+
+            const totalGo = gs.goCorrect + gs.goMissed;
+            const totalStop = gs.stopCorrect + gs.stopFailed;
+            const goAcc = totalGo > 0 ? Math.round((gs.goCorrect / totalGo) * 100) : 0;
+            const stopAcc = totalStop > 0 ? Math.round((gs.stopCorrect / totalStop) * 100) : 0;
+            const avgGoRT = gs.goRTs.length > 0 ? Math.round(gs.goRTs.reduce((a, b) => a + b, 0) / gs.goRTs.length) : 0;
+
+            // SSRT = Average Go RT - Average SSD (Stop Signal Reaction Time)
+            const avgSSD = gs.ssdHistory.length > 0 ? gs.ssdHistory.reduce((a, b) => a + b, 0) / gs.ssdHistory.length : 250;
+            const ssrt = Math.max(0, Math.round(avgGoRT - avgSSD));
+
+            // Risk: Higher commission errors + higher SSRT = more risk
+            let riskScore = Math.min(100, Math.max(0, Math.round(
+                gs.stopFailed * 8 +
+                gs.goMissed * 5 +
+                Math.max(0, (ssrt - 200) / 5) +
+                Math.max(0, (100 - stopAcc) * 0.4)
+            )));
+
+            document.getElementById('goAcc').textContent = goAcc + '%';
+            document.getElementById('goAcc').className = 'value ' + (goAcc >= 80 ? 'good' : goAcc >= 60 ? 'moderate' : 'concern');
+            document.getElementById('stopAcc').textContent = stopAcc + '%';
+            document.getElementById('stopAcc').className = 'value ' + (stopAcc >= 60 ? 'good' : stopAcc >= 40 ? 'moderate' : 'concern');
+            document.getElementById('avgGoRT').textContent = avgGoRT + 'ms';
+            document.getElementById('avgGoRT').className = 'value ' + (avgGoRT < 500 ? 'good' : avgGoRT < 800 ? 'moderate' : 'concern');
+            document.getElementById('ssrt').textContent = ssrt + 'ms';
+            document.getElementById('ssrt').className = 'value ' + (ssrt < 250 ? 'good' : ssrt < 400 ? 'moderate' : 'concern');
+            document.getElementById('commErrors').textContent = gs.stopFailed;
+            document.getElementById('commErrors').className = 'value ' + (gs.stopFailed <= 2 ? 'good' : gs.stopFailed <= 4 ? 'moderate' : 'concern');
+            document.getElementById('omErrors').textContent = gs.goMissed;
+            document.getElementById('omErrors').className = 'value ' + (gs.goMissed <= 2 ? 'good' : gs.goMissed <= 5 ? 'moderate' : 'concern');
+
+            const fill = document.getElementById('riskFill');
+            fill.style.background = riskScore < 30 ? '#34d399' : riskScore < 60 ? '#fbbf24' : '#ef4444';
+            setTimeout(() => { fill.style.width = riskScore + '%'; }, 100);
+
+            localStorage.setItem('prism_stopsignal_results', JSON.stringify({
+                game: 'stopsignal', goAcc, stopAcc, avgGoRT, ssrt,
+                commissionErrors: gs.stopFailed, omissionErrors: gs.goMissed,
+                riskScore, timestamp: Date.now()
+            }));
+        }
+    </script>
+</body>
+</html>

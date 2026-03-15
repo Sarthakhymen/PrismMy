@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Pattern — PRISM Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0a0f; --bg2: #111118; --card: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.06); --text: #f0f0f5; --muted: #8888a0;
+            --indigo: #818cf8; --cyan: #06b6d4; --pink: #f472b6; --green: #34d399;
+            --amber: #fbbf24; --red: #ef4444; --purple: #a78bfa; --orange: #fb923c;
+            --gradient: linear-gradient(135deg, #fb923c, #fbbf24);
+            --font-display: 'Outfit', sans-serif; --font-body: 'Inter', sans-serif;
+        }
+        body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; }
+        .game-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid var(--border); background: rgba(10,10,15,0.9); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100; }
+        .game-nav a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: color 0.3s; }
+        .game-nav a:hover { color: var(--text); }
+        .game-nav .title { font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .game-wrapper { max-width: 800px; margin: 0 auto; padding: 40px 24px; }
+        .intro-screen { text-align: center; padding: 60px 20px; }
+        .intro-screen h1 { font-family: var(--font-display); font-size: 2.8rem; font-weight: 800; margin-bottom: 16px; }
+        .gradient-text { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .intro-screen p { color: var(--muted); font-size: 1.1rem; max-width: 500px; margin: 0 auto 20px; line-height: 1.7; }
+        .rules { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 28px; margin: 32px auto; max-width: 500px; text-align: left; }
+        .rules h3 { font-family: var(--font-display); font-weight: 700; margin-bottom: 16px; color: var(--orange); }
+        .rules li { color: var(--muted); font-size: 0.95rem; padding: 8px 0; display: flex; align-items: center; gap: 10px; list-style: none; }
+        .rules li::before { content: '🎵'; font-size: 1.1rem; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 16px 36px; border-radius: 14px; font-weight: 700; font-size: 1rem; cursor: pointer; border: none; transition: all 0.3s ease; font-family: var(--font-body); text-decoration: none; }
+        .btn-primary { background: var(--gradient); color: white; box-shadow: 0 4px 20px rgba(251,146,60,0.3); }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 40px rgba(251,146,60,0.4); }
+        .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--orange); }
+        .game-hud { display: flex; justify-content: space-between; padding: 16px 24px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 24px; }
+        .hud-item { text-align: center; }
+        .hud-label { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .hud-value { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; }
+        .game-area { text-align: center; padding: 20px; }
+
+        /* Sound Pads */
+        .sound-pads { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 400px; margin: 24px auto; }
+        .sound-pad { aspect-ratio: 1; border-radius: 20px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-weight: 700; font-size: 0.85rem; border: 2px solid transparent; }
+        .sound-pad:hover { transform: scale(1.05); }
+        .sound-pad.flash { transform: scale(1.15); box-shadow: 0 0 40px currentColor; filter: brightness(1.5); }
+        .sound-pad.disabled { pointer-events: none; opacity: 0.5; }
+
+        .pad-0 { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); color: #ef4444; }
+        .pad-0.flash { background: rgba(239,68,68,0.4); }
+        .pad-1 { background: rgba(52,211,153,0.15); border-color: rgba(52,211,153,0.3); color: #34d399; }
+        .pad-1.flash { background: rgba(52,211,153,0.4); }
+        .pad-2 { background: rgba(129,140,248,0.15); border-color: rgba(129,140,248,0.3); color: #818cf8; }
+        .pad-2.flash { background: rgba(129,140,248,0.4); }
+        .pad-3 { background: rgba(251,191,36,0.15); border-color: rgba(251,191,36,0.3); color: #fbbf24; }
+        .pad-3.flash { background: rgba(251,191,36,0.4); }
+        .pad-4 { background: rgba(244,114,182,0.15); border-color: rgba(244,114,182,0.3); color: #f472b6; }
+        .pad-4.flash { background: rgba(244,114,182,0.4); }
+        .pad-5 { background: rgba(6,182,212,0.15); border-color: rgba(6,182,212,0.3); color: #06b6d4; }
+        .pad-5.flash { background: rgba(6,182,212,0.4); }
+
+        .phase-label { font-size: 1.1rem; color: var(--orange); font-weight: 700; margin: 16px 0; }
+        .seq-dots { display: flex; gap: 8px; justify-content: center; margin: 16px 0; }
+        .seq-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--border); transition: all 0.3s; }
+        .seq-dot.done { background: var(--green); }
+        .seq-dot.current { background: var(--orange); transform: scale(1.3); }
+        .seq-dot.wrong-dot { background: var(--red); }
+
+        .feedback-msg { text-align: center; margin-top: 20px; font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; animation: feedbackPop 0.4s ease; }
+        @keyframes feedbackPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .results-screen { text-align: center; padding: 40px 20px; }
+        .results-screen h2 { font-family: var(--font-display); font-size: 2.4rem; font-weight: 800; margin-bottom: 8px; }
+        .results-screen .subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 36px; }
+        .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 36px; }
+        .result-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px 16px; }
+        .result-card .label { font-size: 0.8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
+        .result-card .value { font-family: var(--font-display); font-size: 2rem; font-weight: 800; }
+        .value.good { color: var(--green); } .value.moderate { color: var(--amber); } .value.concern { color: var(--pink); }
+        .risk-bar-container { max-width: 400px; margin: 0 auto 36px; }
+        .risk-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
+        .risk-bar { height: 12px; background: rgba(255,255,255,0.06); border-radius: 6px; overflow: hidden; }
+        .risk-fill { height: 100%; border-radius: 6px; transition: width 1.5s ease; }
+        .results-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <nav class="game-nav">
+        <a href="../index.html">← Back to PRISM</a>
+        <div class="title"><span>🎵</span> Sound Pattern</div>
+        <a href="../dashboard.html">Dashboard →</a>
+    </nav>
+    <div class="game-wrapper">
+        <div id="introScreen" class="intro-screen">
+            <h1>🎵 <span class="gradient-text">Sound Pattern</span></h1>
+            <p>Test your auditory processing and rhythm perception — key indicators for Dyslexia and ADHD screening.</p>
+            <div class="rules">
+                <h3>How to Play</h3>
+                <ul>
+                    <li><strong>Listen</strong> to the sound pattern carefully</li>
+                    <li>Watch which pads light up in sequence</li>
+                    <li><strong>Repeat</strong> the pattern by clicking the pads</li>
+                    <li>Sequences get <strong>longer</strong> each round</li>
+                    <li>3 wrong attempts and the game ends</li>
+                </ul>
+            </div>
+            <button class="btn btn-primary" onclick="startGame()">▶ Start Game</button>
+        </div>
+
+        <div id="gameScreen" class="hidden">
+            <div class="game-hud">
+                <div class="hud-item"><div class="hud-label">Score</div><div class="hud-value" style="color: var(--green)" id="scoreDisplay">0</div></div>
+                <div class="hud-item"><div class="hud-label">Round</div><div class="hud-value" style="color: var(--orange)" id="roundDisplay">1</div></div>
+                <div class="hud-item"><div class="hud-label">Sequence</div><div class="hud-value" style="color: var(--cyan)" id="seqDisplay">3</div></div>
+                <div class="hud-item"><div class="hud-label">Lives</div><div class="hud-value" style="color: var(--pink)" id="livesDisplay">❤️❤️❤️</div></div>
+            </div>
+            <div id="questionArea" class="game-area"></div>
+        </div>
+
+        <div id="resultsScreen" class="results-screen hidden">
+            <h2>🎵 Assessment Complete!</h2>
+            <p class="subtitle">Here's your auditory processing analysis</p>
+            <div class="results-grid">
+                <div class="result-card"><div class="label">Total Score</div><div class="value good" id="finalScore">0</div></div>
+                <div class="result-card"><div class="label">Max Sequence</div><div class="value" id="maxSeq">0</div></div>
+                <div class="result-card"><div class="label">Accuracy</div><div class="value" id="finalAccuracy">0%</div></div>
+                <div class="result-card"><div class="label">Rounds Done</div><div class="value" id="roundsDone">0</div></div>
+                <div class="result-card"><div class="label">Avg Response</div><div class="value" id="finalAvgTime">0s</div></div>
+                <div class="result-card"><div class="label">Audio Grade</div><div class="value" id="audioGrade">—</div></div>
+            </div>
+            <div class="risk-bar-container">
+                <div class="risk-label"><span>Low Risk</span><span>Auditory Processing Risk</span><span>High Risk</span></div>
+                <div class="risk-bar"><div class="risk-fill" id="riskFill"></div></div>
+            </div>
+            <div class="results-actions">
+                <button class="btn btn-primary" onclick="startGame()">🔄 Play Again</button>
+                <button class="btn btn-secondary" onclick="window.location.href='../dashboard.html'">📊 Dashboard</button>
+                <a href="motor.html" class="btn btn-secondary">Next: Motor Match →</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Web Audio API for sound generation
+        let audioCtx = null;
+        const noteFreqs = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99]; // C4 E4 G4 C5 E5 G5
+        const padEmojis = ['🔴', '🟢', '🔵', '🟡', '🩷', '🩵'];
+        const padNames = ['Do', 'Mi', 'Sol', 'Do′', 'Mi′', 'Sol′'];
+
+        function playNote(index, duration = 300) {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = noteFreqs[index];
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration / 1000);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration / 1000);
+        }
+
+        let gs = { round: 0, score: 0, lives: 3, sequence: [], userIndex: 0, maxSeq: 0, correct: 0, wrong: 0, reactionTimes: [], roundStart: 0, numPads: 4 };
+
+        function startGame() {
+            gs = { round: 0, score: 0, lives: 3, sequence: [], userIndex: 0, maxSeq: 0, correct: 0, wrong: 0, reactionTimes: [], roundStart: 0, numPads: 4 };
+            document.getElementById('introScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            nextRound();
+        }
+
+        function nextRound() {
+            if (gs.lives <= 0) { endGame(); return; }
+            gs.round++;
+            gs.numPads = gs.round <= 4 ? 4 : 6; // More pads at higher rounds
+            gs.userIndex = 0;
+
+            // Add one new note to the sequence (Simon-style)
+            gs.sequence.push(Math.floor(Math.random() * gs.numPads));
+
+            updateHUD();
+            renderPads();
+
+            // Play the sequence
+            setTimeout(() => playSequence(), 600);
+        }
+
+        function renderPads() {
+            const area = document.getElementById('questionArea');
+            const dots = gs.sequence.map((_, i) => `<div class="seq-dot" id="seqDot${i}"></div>`).join('');
+
+            area.innerHTML = `
+                <div class="phase-label" id="phaseLabel">👀 Listen carefully...</div>
+                <div class="seq-dots">${dots}</div>
+                <div class="sound-pads" style="grid-template-columns: repeat(${gs.numPads <= 4 ? 2 : 3}, 1fr)">
+                    ${Array.from({ length: gs.numPads }, (_, i) => `
+                        <div class="sound-pad pad-${i} disabled" id="pad${i}" onclick="padClick(${i})">
+                            <span style="font-size: 2rem">${padEmojis[i]}</span>
+                            <span>${padNames[i]}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div id="feedbackArea"></div>
+            `;
+        }
+
+        function playSequence() {
+            let i = 0;
+            const interval = setInterval(() => {
+                // Reset all pads
+                document.querySelectorAll('.sound-pad').forEach(p => p.classList.remove('flash'));
+                document.querySelectorAll('.seq-dot').forEach(d => d.classList.remove('current'));
+
+                if (i < gs.sequence.length) {
+                    const padIdx = gs.sequence[i];
+                    const pad = document.getElementById(`pad${padIdx}`);
+                    pad.classList.add('flash');
+                    playNote(padIdx);
+                    const dot = document.getElementById(`seqDot${i}`);
+                    if (dot) dot.classList.add('current');
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    // Enable input
+                    setTimeout(() => {
+                        document.querySelectorAll('.sound-pad').forEach(p => p.classList.remove('flash', 'disabled'));
+                        document.getElementById('phaseLabel').textContent = '🎮 Your turn! Repeat the pattern';
+                        gs.roundStart = performance.now();
+                    }, 300);
+                }
+            }, 600);
+        }
+
+        function padClick(idx) {
+            playNote(idx, 200);
+            const pad = document.getElementById(`pad${idx}`);
+            pad.classList.add('flash');
+            setTimeout(() => pad.classList.remove('flash'), 200);
+
+            if (gs.sequence[gs.userIndex] === idx) {
+                const dot = document.getElementById(`seqDot${gs.userIndex}`);
+                if (dot) dot.classList.add('done');
+                gs.userIndex++;
+
+                if (gs.userIndex === gs.sequence.length) {
+                    // Round complete
+                    const rt = performance.now() - gs.roundStart;
+                    gs.reactionTimes.push(rt);
+                    gs.correct++;
+                    gs.maxSeq = Math.max(gs.maxSeq, gs.sequence.length);
+                    const bonus = Math.max(0, Math.round(150 - rt / 100));
+                    gs.score += gs.sequence.length * 50 + bonus;
+                    document.querySelectorAll('.sound-pad').forEach(p => p.classList.add('disabled'));
+                    document.getElementById('feedbackArea').innerHTML = `<div class="feedback-msg" style="color: var(--green)">✅ Perfect sequence! +${gs.sequence.length * 50 + bonus}</div>`;
+                    updateHUD();
+                    setTimeout(() => nextRound(), 1200);
+                }
+            } else {
+                // Wrong!
+                gs.wrong++;
+                gs.lives--;
+                const dot = document.getElementById(`seqDot${gs.userIndex}`);
+                if (dot) dot.classList.add('wrong-dot');
+                document.querySelectorAll('.sound-pad').forEach(p => p.classList.add('disabled'));
+                document.getElementById('feedbackArea').innerHTML = `<div class="feedback-msg" style="color: var(--red)">❌ Wrong note! -1 ❤️</div>`;
+
+                // Replay correct sequence
+                setTimeout(() => {
+                    playSequence();
+                    setTimeout(() => {
+                        // Reset sequence (restart with shorter or same)
+                        gs.sequence = gs.sequence.slice(0, Math.max(2, gs.sequence.length - 1));
+                        updateHUD();
+                        if (gs.lives <= 0) { endGame(); } else { setTimeout(() => nextRound(), 600); }
+                    }, gs.sequence.length * 600 + 500);
+                }, 800);
+            }
+        }
+
+        function updateHUD() {
+            document.getElementById('scoreDisplay').textContent = gs.score;
+            document.getElementById('roundDisplay').textContent = gs.round;
+            document.getElementById('seqDisplay').textContent = gs.sequence.length;
+            document.getElementById('livesDisplay').textContent = '❤️'.repeat(gs.lives) + '🖤'.repeat(3 - gs.lives);
+        }
+
+        function endGame() {
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('resultsScreen').classList.remove('hidden');
+
+            const accuracy = gs.correct + gs.wrong > 0 ? Math.round((gs.correct / (gs.correct + gs.wrong)) * 100) : 0;
+            const avgTime = gs.reactionTimes.length > 0 ? (gs.reactionTimes.reduce((a, b) => a + b, 0) / gs.reactionTimes.length / 1000).toFixed(1) : '0';
+
+            let grade = 'Needs Work', gradeClass = 'concern';
+            if (gs.maxSeq >= 8) { grade = 'Excellent'; gradeClass = 'good'; }
+            else if (gs.maxSeq >= 5) { grade = 'Good'; gradeClass = 'good'; }
+            else if (gs.maxSeq >= 3) { grade = 'Average'; gradeClass = 'moderate'; }
+
+            let riskScore = Math.min(100, Math.max(0, Math.round(
+                Math.max(0, (6 - gs.maxSeq) * 12) +
+                Math.max(0, (100 - accuracy) * 0.5) +
+                gs.wrong * 6
+            )));
+
+            document.getElementById('finalScore').textContent = gs.score;
+            document.getElementById('maxSeq').textContent = gs.maxSeq;
+            document.getElementById('maxSeq').className = 'value ' + gradeClass;
+            document.getElementById('finalAccuracy').textContent = accuracy + '%';
+            document.getElementById('finalAccuracy').className = 'value ' + (accuracy >= 75 ? 'good' : accuracy >= 50 ? 'moderate' : 'concern');
+            document.getElementById('roundsDone').textContent = gs.round;
+            document.getElementById('finalAvgTime').textContent = avgTime + 's';
+            document.getElementById('audioGrade').textContent = grade;
+            document.getElementById('audioGrade').className = 'value ' + gradeClass;
+
+            const fill = document.getElementById('riskFill');
+            fill.style.background = riskScore < 30 ? '#34d399' : riskScore < 60 ? '#fbbf24' : '#ef4444';
+            setTimeout(() => { fill.style.width = riskScore + '%'; }, 100);
+
+            localStorage.setItem('prism_sound_results', JSON.stringify({
+                game: 'sound', score: gs.score, maxSeq: gs.maxSeq, accuracy,
+                avgTime: parseFloat(avgTime), grade, riskScore, timestamp: Date.now()
+            }));
+        }
+    </script>
+</body>
+</html>
